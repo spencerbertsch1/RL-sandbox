@@ -2,3 +2,4 @@ gym==0.22.0
 pygame==2.1.2
 jupyterlab==3.3.0
 matplotlib==3.5.1
+opencv-python==4.5.5.62
