@@ -17,6 +17,10 @@ BOARD_SIZE = 75
 SPEED = 12
 # Maximum speed at which the fire advances
 FIRE_SPEED = 20
+# Wind
+WIND_DIRECTION = 4
+wind_direction_lookup = {'north': 1, 'northeast': 2, 'east': 3, 'southeast': 4, 'south': 5, 'southwest': 6, 'west': 7, 'northwest': 8}
+WIND_SPEED = 5
 
 
 class Plane:
@@ -78,6 +82,19 @@ def get_neighbors(node: Node, node_map: list):
 
     return neighbor_nodes
 
+def get_down_wind_state(state: list) -> list:
+    """
+    :param: state - list of two ints representing [x, y] of the node in question - [10, 10] for example
+    Note that the origin is in the UPPER LEFT of the grid 
+    """
+    if WIND_DIRECTION == 1: 
+        # fire burns north
+        down_wind_state = [state[0]-1, state[1]]
+    elif WIND_DIRECTION == 4:
+        down_wind_state = [state[0]+1, state[1]+1]
+
+    return down_wind_state
+
 def get_next_burning(currently_burning_nodes: list) -> list:
     
     next_burning_nodes: list = []
@@ -87,12 +104,26 @@ def get_next_burning(currently_burning_nodes: list) -> list:
         node.fuel = 0
         node.burning = False
         burned_nodes.append(node)
+        downwind_state = get_down_wind_state(state=node.state)
+
+        # generate random number between 0 and 1
+        r = random.uniform(0, 1)
 
         for neighbor_node in node.neighbors:
-            #  we can make this much more sophistocated later - for now let's make it binary
+            
             if (neighbor_node.fuel != 0) and (neighbor_node.burning == False):
-                next_burning_nodes.append(neighbor_node)
-                neighbor_node.burning = True
+                
+                # lets first handle nodes that are not in the wind's direction
+                if neighbor_node.state != downwind_state:
+                    if r < 0.2:
+                        next_burning_nodes.append(neighbor_node)
+                        neighbor_node.burning = True
+
+                # now we can handle the down wind nodes 
+                if neighbor_node.state == downwind_state:
+                    if r > 0.2:
+                        next_burning_nodes.append(neighbor_node)
+                        neighbor_node.burning = True
 
     return next_burning_nodes
 
@@ -175,7 +206,7 @@ if __name__ == '__main__' :
         for burned_node in burned_nodes:
             x = burned_node.state[0] * CELL_SIZE
             y = burned_node.state[1] * CELL_SIZE
-            board_states[y:y + CELL_SIZE, x:x + CELL_SIZE] = [173,216,230]
+            board_states[y:y + CELL_SIZE, x:x + CELL_SIZE] = [173,190,255]
         
         # # Display the plane  
         x = plane.state[0] * CELL_SIZE
