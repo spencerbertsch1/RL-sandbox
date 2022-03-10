@@ -10,9 +10,9 @@ import random
 
 # define globals 
 # Size of each cell in the board game
-CELL_SIZE = 20
+CELL_SIZE = 10
 # Number of cells along the width in the game
-BOARD_SIZE = 50
+BOARD_SIZE = 75
 # Change SPEED to make the game go faster
 SPEED = 12
 # Maximum speed at which the fire advances
@@ -86,6 +86,7 @@ def get_next_burning(currently_burning_nodes: list) -> list:
 
         node.fuel = 0
         node.burning = False
+        burned_nodes.append(node)
 
         for neighbor_node in node.neighbors:
             #  we can make this much more sophistocated later - for now let's make it binary
@@ -147,21 +148,34 @@ if __name__ == '__main__' :
     # initislize fire start location
     fire_start_state = [(10, 10), (15, 25)]
     # node_map[fire_start_state[0]][fire_start_state[1]].burning = True
-    # burning_nodes: list = [node_map[fire_start_state[0][0]][fire_start_state[0][1]], 
-    #                        node_map[fire_start_state[1][0]][fire_start_state[1][1]]]
-    burning_nodes: list = [node_map[fire_start_state[0][0]][fire_start_state[0][1]]]
+    burning_nodes: list = [node_map[fire_start_state[0][0]][fire_start_state[0][1]], 
+                           node_map[fire_start_state[1][0]][fire_start_state[1][1]]]
+    # burning_nodes: list = [node_map[fire_start_state[0][0]][fire_start_state[0][1]]]
 
+    burned_nodes = []
+
+    board_start_state = np.zeros([BOARD_SIZE * CELL_SIZE, BOARD_SIZE * CELL_SIZE, 3])
+
+    for i in range(board_start_state.shape[0]):
+        for j in range(board_start_state.shape[1]): 
+            # TODO we will eventually set up the RGB of the board depending on the fuel in each node
+            board_start_state[i][j] = [34,139,34]  # <-- texturize this
 
     def display():
 
         # Create a blank image
-        board_states = np.zeros([BOARD_SIZE * CELL_SIZE, BOARD_SIZE * CELL_SIZE, 3])
+        board_states = board_start_state.copy()
 
         # We can use this to display all of the currently burning states 
         for burning_node in burning_nodes:
             x = burning_node.state[0] * CELL_SIZE
             y = burning_node.state[1] * CELL_SIZE
             board_states[y:y + CELL_SIZE, x:x + CELL_SIZE] = [0, 0, 255]
+
+        for burned_node in burned_nodes:
+            x = burned_node.state[0] * CELL_SIZE
+            y = burned_node.state[1] * CELL_SIZE
+            board_states[y:y + CELL_SIZE, x:x + CELL_SIZE] = [173,216,230]
         
         # # Display the plane  
         x = plane.state[0] * CELL_SIZE
