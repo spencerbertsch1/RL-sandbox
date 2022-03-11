@@ -7,12 +7,13 @@ from random import randint
 from random import choice
 import math
 import random
+import time
 
 # define globals 
 # Size of each cell in the board game
-CELL_SIZE = 10
+CELL_SIZE = 15
 # Number of cells along the width in the game
-BOARD_SIZE = 75
+BOARD_SIZE = 100
 # Change SPEED to make the game go faster
 SPEED = 12
 # Maximum speed at which the fire advances
@@ -21,6 +22,9 @@ FIRE_SPEED = 20
 WIND_DIRECTION = 4
 wind_direction_lookup = {'north': 1, 'northeast': 2, 'east': 3, 'southeast': 4, 'south': 5, 'southwest': 6, 'west': 7, 'northwest': 8}
 WIND_SPEED = 5
+
+# train mode - true if we want the simulations to run fast and we don't care about aesthetics
+TRAIN_MODE = False
 
 
 class Plane:
@@ -185,38 +189,63 @@ if __name__ == '__main__' :
 
     burned_nodes = []
 
-    board_start_state = np.zeros([BOARD_SIZE * CELL_SIZE, BOARD_SIZE * CELL_SIZE, 3])
+    board_start_state = np.zeros([BOARD_SIZE * CELL_SIZE, BOARD_SIZE * CELL_SIZE, 4])
 
-    for i in range(board_start_state.shape[0]):
-        for j in range(board_start_state.shape[1]): 
+    # for i in range(board_start_state.shape[0]):
+    #     for j in range(board_start_state.shape[1]): 
+    #         # TODO we will eventually set up the RGB of the board depending on the fuel in each node
+    #         board_start_state[i][j] = [34,139,34]  # <-- texturize this
+
+    background_image = cv2.imread('/Users/spencerbertsch/Desktop/dev/RL-sandbox/src/images/occidental_vet_hospital.png')
+    layer1 = np.zeros([background_image.shape[0], background_image.shape[1], 4])
+
+    for i in range(layer1.shape[0]):
+        for j in range(layer1.shape[1]): 
             # TODO we will eventually set up the RGB of the board depending on the fuel in each node
-            board_start_state[i][j] = [34,139,34]  # <-- texturize this
+            layer1[i][j] = np.uint8(np.append(background_image[i][j], 255))
 
     def display():
 
         # Create a blank image
-        board_states = board_start_state.copy()
+        layer2 = board_start_state.copy()
 
+        # draw the fire, burned area, and plane on the second layer 
         # We can use this to display all of the currently burning states 
         for burning_node in burning_nodes:
             x = burning_node.state[0] * CELL_SIZE
             y = burning_node.state[1] * CELL_SIZE
-            board_states[y:y + CELL_SIZE, x:x + CELL_SIZE] = [0, 0, 255]
+            layer2[y:y + CELL_SIZE, x:x + CELL_SIZE] = [0, 0, 255, 255]
 
         for burned_node in burned_nodes:
             x = burned_node.state[0] * CELL_SIZE
             y = burned_node.state[1] * CELL_SIZE
-            board_states[y:y + CELL_SIZE, x:x + CELL_SIZE] = [173,190,255]
+            layer2[y:y + CELL_SIZE, x:x + CELL_SIZE] = [173, 220, 255, 255]
         
         # # Display the plane  
         x = plane.state[0] * CELL_SIZE
         y = plane.state[1] * CELL_SIZE
-        board_states[y:y + CELL_SIZE, x:x + CELL_SIZE] = [255, 255, 255]
+        layer2[y:y + CELL_SIZE, x:x + CELL_SIZE] = [255, 255, 255, 255]
         
-        # Display board_states
-        cv2.imshow("Wildfire Environment", np.uint8(board_states))
+        if TRAIN_MODE: 
+            res = layer2
+        else:
+            # copy the first layer into the resulting image
+            res = np.uint8(layer1.copy()) 
+
+            # copy the first layer into the resulting image
+            cnd = layer2[:, :, 3] > 0
+
+            # copy the first layer into the resulting image
+            res[cnd] = layer2[cnd]
+
+        # show the output image
+        cv2.imshow("Wildfire Environment", res)
         key = cv2.waitKey(int(1000/SPEED))
-        
+
+        # cv2.imshow("Wildfire Environment", np.uint8(board_states))
+        # key = cv2.waitKey(int(1000/SPEED))
+
+
         # Return the key pressed. It is -1 if no key is pressed. 
         return key
 
@@ -230,7 +259,8 @@ if __name__ == '__main__' :
 
     c = 0
     while True:
-
+        t = time.time()
+        
         # Makes and displays the board_states
         key = display()
 
@@ -263,3 +293,5 @@ if __name__ == '__main__' :
             c = 0
         else:
             c += 1
+
+        print(time.time() - t)
