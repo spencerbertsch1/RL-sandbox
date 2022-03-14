@@ -15,9 +15,9 @@ CELL_SIZE = 15
 # Number of cells along the width in the game
 BOARD_SIZE = 100
 # Change SPEED to make the game go faster
-SPEED = 12
+SPEED = 15
 # Maximum speed at which the fire advances
-FIRE_SPEED = 20
+FIRE_SPEED = 30
 # Wind
 WIND_DIRECTION = 4
 wind_direction_lookup = {'north': 1, 'northeast': 2, 'east': 3, 'southeast': 4, 'south': 5, 'southwest': 6, 'west': 7, 'northwest': 8}
@@ -244,7 +244,6 @@ if __name__ == '__main__' :
 
         # cv2.imshow("Wildfire Environment", np.uint8(board_states))
         # key = cv2.waitKey(int(1000/SPEED))
-
 
         # Return the key pressed. It is -1 if no key is pressed. 
         return key
