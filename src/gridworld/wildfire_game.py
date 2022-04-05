@@ -18,6 +18,8 @@ BOARD_SIZE = 100
 SPEED = 15
 # Maximum speed at which the fire advances
 FIRE_SPEED = 5
+# the amount of time in actual minutes that go by before the fire advances one step (this needs to be calibrated realistically)
+FIRE_TIMESTEP = int(FIRE_SPEED*3)  # minutes
 # Wind
 WIND_DIRECTION = 4
 wind_direction_lookup = {'north': 1, 'northeast': 2, 'east': 3, 'southeast': 4, 'south': 5, 'southwest': 6, 'west': 7, 'northwest': 8}
@@ -25,6 +27,8 @@ WIND_SPEED = 5
 
 # train mode - true if we want the simulations to run fast and we don't care about aesthetics
 TRAIN_MODE = False
+
+
 
 
 class Plane:
@@ -151,6 +155,33 @@ def get_next_burning(currently_burning_nodes: list, first_ignition: bool) -> lis
 
     return next_burning_nodes
 
+def make_score_box():
+    window_name = 'Score_Box'
+  
+    # Start coordinate, here (5, 5)
+    # represents the top left corner of rectangle
+    start_point = (5, 5)
+    
+    # Ending coordinate, here (220, 220)
+    # represents the bottom right corner of rectangle
+    end_point = (220, 220)
+    
+    # Blue color in BGR
+    color = (255, 0, 0)
+    
+    # Line thickness of 2 px
+    thickness = 2
+    
+    # Using cv2.rectangle() method
+    # Draw a rectangle with blue line borders of thickness of 2 px
+    image = cv2.rectangle(image, start_point, end_point, color, thickness)
+
+    return {'window_name': window_name, 'image': image}
+
+def print_results(fire_time: int, curr_score: int):
+    s = '-'*50
+    print(f'\n\n\n{s} \nTOTAL TIME TAKEN TO EXTINGUISH FIRE: {fire_time} MINUTES')
+    print(f'FINAL SCORE: {curr_score} \n {s}')
 
 def win_focus():
     # Ugly trick to get the window in focus.
@@ -228,11 +259,13 @@ if __name__ == '__main__' :
             # TODO we will eventually set up the RGB of the board depending on the fuel in each node
             layer1[i][j] = np.uint8(np.append(background_image[i][j], 255))
 
+    # use this cache to speed up the rendering of the layered image
+    layer2_cache = board_start_state.copy()
 
-    def display():
+    def display(fire_time: int, curr_score: int):
 
         # Create a blank image
-        layer2 = board_start_state.copy()
+        layer2 = layer2_cache.copy()
 
         # draw the fire, burned area, and plane on the second layer 
         # We can use this to display all of the currently burning states 
@@ -271,6 +304,13 @@ if __name__ == '__main__' :
             # copy the first layer into the resulting image
             res[cnd] = layer2[cnd]
 
+        # add the score to the image 
+        pix: int = int(CELL_SIZE * BOARD_SIZE)
+        cv2.rectangle(res, ((pix-300), 0), (pix, (125)), (211, 211, 211), -1)
+
+        cv2.putText(res, text=f'Time: {fire_time} minutes', org=((pix-300), 50), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(0, 0, 0),thickness=2)
+        cv2.putText(res, text=f'Score: {curr_score}', org=((pix-300), 100), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(0, 0, 0),thickness=2)
+
         # show the output image
         cv2.imshow("Wildfire Environment", res)
         key = cv2.waitKey(int(1000/SPEED))
@@ -290,13 +330,15 @@ if __name__ == '__main__' :
 
 
     c = 0
+    fire_time = 0
+    curr_score: int = BOARD_SIZE*BOARD_SIZE
     first_ignition = True
     phos_check_dump = False
     while True:
         t = time.time()
         
         # Makes and displays the board_states
-        display_dict: dict = display()
+        display_dict: dict = display(fire_time=fire_time, curr_score=curr_score)
         key = display_dict['key']
 
         # Gets key presses and moves accordingly
@@ -331,18 +373,27 @@ if __name__ == '__main__' :
 
         # cause the fire to spread either deterministically or via a stochastic function 
         if c == FIRE_SPEED: 
-            burning_nodes = get_next_burning(burning_nodes, first_ignition=first_ignition)
-            first_ignition=False
-            c = 0
+            if len(burning_nodes) == 0:
+                quit = True
+                print_results(fire_time=fire_time, curr_score=curr_score)
+                break
+            else:
+                burning_nodes = get_next_burning(burning_nodes, first_ignition=first_ignition)
+                first_ignition=False
+                c = 0
+                # increment the clock 
+                fire_time = fire_time + FIRE_TIMESTEP
+                curr_score = (BOARD_SIZE*BOARD_SIZE) - len(burned_nodes)
         else:
             c += 1
 
         print(time.time() - t)
+        
 
 """
 ----------------- TODOs -----------------
 
-1. Add a box in the upper right corner that displays the time since fire inception and the current score
+1. Show time and current score at the end of the game for a few seconds (if TRAIN_MODE is False)
 2. Add a caching function to speed up the simulation (remove all those double for loops that run on every iteration)
 3. Apply constraints on the amount of phos chek you can drop at one time
 
