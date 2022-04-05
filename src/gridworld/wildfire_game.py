@@ -17,7 +17,7 @@ BOARD_SIZE = 100
 # Change SPEED to make the game go faster
 SPEED = 15
 # Maximum speed at which the fire advances
-FIRE_SPEED = 30
+FIRE_SPEED = 5
 # Wind
 WIND_DIRECTION = 4
 wind_direction_lookup = {'north': 1, 'northeast': 2, 'east': 3, 'southeast': 4, 'south': 5, 'southwest': 6, 'west': 7, 'northwest': 8}
@@ -338,3 +338,12 @@ if __name__ == '__main__' :
             c += 1
 
         print(time.time() - t)
+
+"""
+----------------- TODOs -----------------
+
+1. Add a box in the upper right corner that displays the time since fire inception and the current score
+2. Add a caching function to speed up the simulation (remove all those double for loops that run on every iteration)
+3. Apply constraints on the amount of phos chek you can drop at one time
+
+"""
