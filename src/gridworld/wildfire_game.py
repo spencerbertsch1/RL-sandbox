@@ -31,9 +31,9 @@ class Plane:
     """
     Plane (agent) for the wild fire RL environment 
     """
-    def __init__(self, state, jell_foam_dropped: bool, direction: int):
+    def __init__(self, state, phos_chek_dropped: bool, direction: int):
         self.state = state                              # [x, y] position of the plane in the grid 
-        self.jell_foam_dropped = jell_foam_dropped      # bool representing whether or not the watery jell-foam has been dropped
+        self.phos_chek_dropped = phos_chek_dropped      # bool representing whether or not the watery jell-foam has been dropped
         self.direction = direction
 
     def move(self):
@@ -53,12 +53,12 @@ class Node:
     Forest Node - node for the wild fire RL envoironment 
     """
 
-    def __init__(self, state, heuristic, fuel=1, burn_speed=None, jell_foam=None, neighbors=None, burning=None):
+    def __init__(self, state, heuristic, fuel=1, burn_speed=None, phos_chek=False, neighbors=None, burning=None):
         self.state = state              # [x, y] position of the node in the grid 
         self.heuristic = heuristic      # euclidean distance to closest human inhabited area 
         self.burn_speed = burn_speed    # {1: slow (sandy area), 2: moderate (wet area), 3: fast (dry forest)}
         self.fuel = fuel                # amount of remaining fuel in this node 
-        self.jell_foam = jell_foam      # jell_foam concentration in this cell
+        self.phos_chek = phos_chek      # phos_chek concentration in this cell
         self.neighbors = neighbors      # 2-4 nodes that represent the adjacent nodes 
         self.burning = burning          # bool representing whether or not the cell is burning
 
@@ -99,7 +99,21 @@ def get_down_wind_state(state: list) -> list:
 
     return down_wind_state
 
-def get_next_burning(currently_burning_nodes: list) -> list:
+
+def get_phos_chek_nodes(plane_x: int, plane_y: int) -> list:
+    # all we have to do here is set the current node's phos_chek value to True and add it to the phos_check nodes
+    x: int = int(plane_x/CELL_SIZE)
+    y: int = int((plane_y/CELL_SIZE))
+    curr_plane_node: Node = node_map[x][y]
+
+    # we set the phos check to true here
+    curr_plane_node.phos_chek = True
+
+    phos_chek_nodes.append(curr_plane_node)
+
+    return phos_chek_nodes
+
+def get_next_burning(currently_burning_nodes: list, first_ignition: bool) -> list:
     
     next_burning_nodes: list = []
     
@@ -117,17 +131,23 @@ def get_next_burning(currently_burning_nodes: list) -> list:
             
             if (neighbor_node.fuel != 0) and (neighbor_node.burning == False):
                 
-                # lets first handle nodes that are not in the wind's direction
-                if neighbor_node.state != downwind_state:
-                    if r < 0.2:
-                        next_burning_nodes.append(neighbor_node)
-                        neighbor_node.burning = True
+                if first_ignition:
+                    next_burning_nodes.append(neighbor_node)
+                    neighbor_node.burning = True
+                else:
+                    # lets first handle nodes that are not in the wind's direction
+                    if neighbor_node.state != downwind_state:
+                        if neighbor_node.phos_chek is False: 
+                            if r < 0.2:
+                                next_burning_nodes.append(neighbor_node)
+                                neighbor_node.burning = True
 
-                # now we can handle the down wind nodes 
-                if neighbor_node.state == downwind_state:
-                    if r > 0.2:
-                        next_burning_nodes.append(neighbor_node)
-                        neighbor_node.burning = True
+                    # now we can handle the down wind nodes 
+                    if neighbor_node.state == downwind_state:
+                        if neighbor_node.phos_chek is False: 
+                            if r > 0.2:
+                                next_burning_nodes.append(neighbor_node)
+                                neighbor_node.burning = True
 
     return next_burning_nodes
 
@@ -161,7 +181,7 @@ def generate_initial_nodes():
     for i in range(BOARD_SIZE):
         for j in range(BOARD_SIZE):
             all_nodes[i][j] =  Node(state=[i, j], heuristic=math.dist([i, j], city_state), \
-                                    burn_speed=burn_speeds[i][j], fuel=fuel_remaining[i][j], jell_foam=False, burning=False)
+                                    burn_speed=burn_speeds[i][j], fuel=fuel_remaining[i][j], phos_chek=False, burning=False)
 
     # now that we have the node map without neighbor nodes defined, lets define those here: 
     for i in range(BOARD_SIZE):
@@ -178,16 +198,20 @@ if __name__ == '__main__' :
 
     plane_start_state = [int((BOARD_SIZE - 1)/2), int((BOARD_SIZE - 1)/2)]
     # plane starts at the center of the board. 
-    plane = Plane(state=plane_start_state, jell_foam_dropped=False, direction=1)
+    plane = Plane(state=plane_start_state, phos_chek_dropped=False, direction=1)
 
     # initislize fire start location
-    fire_start_state = [(10, 10), (15, 25)]
+    fire_start_state = [(10, 10), (15, 55)]
     # node_map[fire_start_state[0]][fire_start_state[1]].burning = True
     burning_nodes: list = [node_map[fire_start_state[0][0]][fire_start_state[0][1]], 
                            node_map[fire_start_state[1][0]][fire_start_state[1][1]]]
     # burning_nodes: list = [node_map[fire_start_state[0][0]][fire_start_state[0][1]]]
 
+    # define blackened nodes (already burned)
     burned_nodes = []
+
+    # define retardant nodes (PHOS-CHEK already dropped here)
+    phos_chek_nodes = []
 
     board_start_state = np.zeros([BOARD_SIZE * CELL_SIZE, BOARD_SIZE * CELL_SIZE, 4])
 
@@ -203,6 +227,7 @@ if __name__ == '__main__' :
         for j in range(layer1.shape[1]): 
             # TODO we will eventually set up the RGB of the board depending on the fuel in each node
             layer1[i][j] = np.uint8(np.append(background_image[i][j], 255))
+
 
     def display():
 
@@ -220,6 +245,14 @@ if __name__ == '__main__' :
             x = burned_node.state[0] * CELL_SIZE
             y = burned_node.state[1] * CELL_SIZE
             layer2[y:y + CELL_SIZE, x:x + CELL_SIZE] = [173, 220, 255, 255]
+
+        # display the fire retardant nodes
+        for phos_chek_node in phos_chek_nodes:
+            x = phos_chek_node.state[0] * CELL_SIZE
+            y = phos_chek_node.state[1] * CELL_SIZE
+            layer2[y:y + CELL_SIZE, x:x + CELL_SIZE] = [255, 10, 10, 255]
+
+        # TODO ^ Speed this up in the future 
         
         # # Display the plane  
         x = plane.state[0] * CELL_SIZE
@@ -246,7 +279,7 @@ if __name__ == '__main__' :
         # key = cv2.waitKey(int(1000/SPEED))
 
         # Return the key pressed. It is -1 if no key is pressed. 
-        return key
+        return {'key': key, 'plane_x': x, 'plane_y': y}
 
 
     # Start the game by printing instructions
@@ -257,11 +290,14 @@ if __name__ == '__main__' :
 
 
     c = 0
+    first_ignition = True
+    phos_check_dump = False
     while True:
         t = time.time()
         
         # Makes and displays the board_states
-        key = display()
+        display_dict: dict = display()
+        key = display_dict['key']
 
         # Gets key presses and moves accordingly
         # 8 and 27 are delete and escape keys
@@ -279,6 +315,9 @@ if __name__ == '__main__' :
             plane.direction = 2
         elif key == ord("w"):
             plane.direction = 3
+        elif key == ord("b"):
+            # activate airal "attack"
+            phos_check_dump = not phos_check_dump
         elif key == ord("p"): 
             quit = True
             break
@@ -286,9 +325,14 @@ if __name__ == '__main__' :
         # Moving the plane
         plane.move()    
 
+        if phos_check_dump:
+            # we are in a time of dumping the phos_chek so we add this node to the phos_chek nodes
+            phos_chek_nodes = get_phos_chek_nodes(plane_x=display_dict['plane_x'], plane_y=display_dict['plane_y'])
+
         # cause the fire to spread either deterministically or via a stochastic function 
         if c == FIRE_SPEED: 
-            burning_nodes = get_next_burning(burning_nodes)
+            burning_nodes = get_next_burning(burning_nodes, first_ignition=first_ignition)
+            first_ignition=False
             c = 0
         else:
             c += 1
