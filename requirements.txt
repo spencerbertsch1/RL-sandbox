@@ -3,3 +3,5 @@ pygame==2.1.2
 jupyterlab==3.3.0
 matplotlib==3.5.1
 opencv-python==4.5.5.62
+box2d-py==2.3.8
+box2d==2.3.2
