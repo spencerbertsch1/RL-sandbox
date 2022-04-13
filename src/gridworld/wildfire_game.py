@@ -8,6 +8,7 @@ from random import choice
 import math
 import random
 import time
+import pickle
 
 # it's very important that these simulations are repeatable - we rely on random.seed() for this
 random.seed(10)
@@ -308,8 +309,6 @@ if __name__ == '__main__' :
                            node_map[fire_start_state[1][0]][fire_start_state[1][1]]]
     # burning_nodes: list = [node_map[fire_start_state[0][0]][fire_start_state[0][1]]]
 
-
-
     # for i in range(board_start_state.shape[0]):
     #     for j in range(board_start_state.shape[1]): 
     #         # TODO we will eventually set up the RGB of the board depending on the fuel in each node
@@ -344,6 +343,7 @@ if __name__ == '__main__' :
     curr_score: int = BOARD_SIZE*BOARD_SIZE
     first_ignition = True
     phos_check_dump = False
+    step_times = []
     while True:
         t = time.time()
         
@@ -402,7 +402,11 @@ if __name__ == '__main__' :
 
         step_time: float = round(time.time() - t, 5)
         print(step_time)
-        
+        step_times.append(step_time)
+
+    # USE THIS FOR AD-HOC PERFORMANCE TESTING
+    # with open('/Users/spencerbertsch/Desktop/dev/RL-sandbox/src/gridworld/metadata/burned_nodes.pkl', 'wb') as f:
+    #     pickle.dump(step_times, f)
 
 """
 ----------------- TODOs -----------------
