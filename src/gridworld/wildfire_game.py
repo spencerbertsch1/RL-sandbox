@@ -9,6 +9,9 @@ import math
 import random
 import time
 
+# it's very important that these simulations are repeatable - we rely on random.seed() for this
+random.seed(10)
+
 # define globals 
 # Size of each cell in the board game
 CELL_SIZE = 15
@@ -17,7 +20,7 @@ BOARD_SIZE = 100
 # Change SPEED to make the game go faster
 SPEED = 15
 # Maximum speed at which the fire advances
-FIRE_SPEED = 5
+FIRE_SPEED = 2
 # the amount of time in actual minutes that go by before the fire advances one step (this needs to be calibrated realistically)
 FIRE_TIMESTEP = int(FIRE_SPEED*3)  # minutes
 # Wind
@@ -222,6 +225,73 @@ def generate_initial_nodes():
     return all_nodes
 
 
+def display(fire_time: int, curr_score: int, layer2_cache: np.ndarray, old_burned_nodes: list):
+
+    # Create a blank image
+    layer2 = layer2_cache.copy()
+
+    # draw the fire, burned area, and plane on the second layer 
+    # We can use this to display all of the currently burning states 
+
+    # only iterate through the NEW burned nodes, not all the burned nodes (increases speed) 
+    new_burned_nodes: list = list(set(burned_nodes) - set(old_burned_nodes))
+    old_burned_nodes.extend(new_burned_nodes)
+
+    for burned_node in new_burned_nodes:
+        x = burned_node.state[0] * CELL_SIZE
+        y = burned_node.state[1] * CELL_SIZE
+        layer2[y:y + CELL_SIZE, x:x + CELL_SIZE] = [173, 220, 255, 255]
+    # TODO ^ Speed this up in the future 
+
+    # create the layer 2 cache so we don't need to iterate through thousands of burned nodes for the render
+    layer2_cache = layer2.copy()
+
+    for burning_node in burning_nodes:
+        x = burning_node.state[0] * CELL_SIZE
+        y = burning_node.state[1] * CELL_SIZE
+        layer2[y:y + CELL_SIZE, x:x + CELL_SIZE] = [0, 0, 255, 255]
+
+    # display the fire retardant nodes
+    for phos_chek_node in phos_chek_nodes:
+        x = phos_chek_node.state[0] * CELL_SIZE
+        y = phos_chek_node.state[1] * CELL_SIZE
+        layer2[y:y + CELL_SIZE, x:x + CELL_SIZE] = [255, 10, 10, 255]
+
+    # Display the plane  
+    x = plane.state[0] * CELL_SIZE
+    y = plane.state[1] * CELL_SIZE
+    layer2[y:y + CELL_SIZE, x:x + CELL_SIZE] = [255, 255, 255, 255]
+    
+    if TRAIN_MODE: 
+        res = layer2
+    else:
+        # copy the first layer into the resulting image
+        res = np.uint8(layer1.copy()) 
+
+        # copy the first layer into the resulting image
+        cnd = layer2[:, :, 3] > 0
+
+        # copy the first layer into the resulting image
+        res[cnd] = layer2[cnd]
+
+    # add the score to the image 
+    pix: int = int(CELL_SIZE * BOARD_SIZE)
+    cv2.rectangle(res, ((pix-300), 0), (pix, (125)), (211, 211, 211), -1)
+
+    cv2.putText(res, text=f'Time: {fire_time} minutes', org=((pix-300), 50), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(0, 0, 0),thickness=2)
+    cv2.putText(res, text=f'Score: {curr_score}', org=((pix-300), 100), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(0, 0, 0),thickness=2)
+
+    # show the output image
+    cv2.imshow("Wildfire Environment", res)
+    key = cv2.waitKey(int(1000/SPEED))
+
+    # cv2.imshow("Wildfire Environment", np.uint8(board_states))
+    # key = cv2.waitKey(int(1000/SPEED))
+
+    # Return the key pressed. It is -1 if no key is pressed. 
+    return {'key': key, 'plane_x': x, 'plane_y': y, 'layer2_cache': layer2_cache, 'old_burned_nodes': old_burned_nodes}
+
+
 if __name__ == '__main__' : 
 
     # list of lists representing the board of all nodes 
@@ -238,13 +308,7 @@ if __name__ == '__main__' :
                            node_map[fire_start_state[1][0]][fire_start_state[1][1]]]
     # burning_nodes: list = [node_map[fire_start_state[0][0]][fire_start_state[0][1]]]
 
-    # define blackened nodes (already burned)
-    burned_nodes = []
 
-    # define retardant nodes (PHOS-CHEK already dropped here)
-    phos_chek_nodes = []
-
-    board_start_state = np.zeros([BOARD_SIZE * CELL_SIZE, BOARD_SIZE * CELL_SIZE, 4])
 
     # for i in range(board_start_state.shape[0]):
     #     for j in range(board_start_state.shape[1]): 
@@ -259,76 +323,22 @@ if __name__ == '__main__' :
             # TODO we will eventually set up the RGB of the board depending on the fuel in each node
             layer1[i][j] = np.uint8(np.append(background_image[i][j], 255))
 
-    # use this cache to speed up the rendering of the layered image
-    layer2_cache = board_start_state.copy()
-
-    def display(fire_time: int, curr_score: int):
-
-        # Create a blank image
-        layer2 = layer2_cache.copy()
-
-        # draw the fire, burned area, and plane on the second layer 
-        # We can use this to display all of the currently burning states 
-        for burning_node in burning_nodes:
-            x = burning_node.state[0] * CELL_SIZE
-            y = burning_node.state[1] * CELL_SIZE
-            layer2[y:y + CELL_SIZE, x:x + CELL_SIZE] = [0, 0, 255, 255]
-
-        for burned_node in burned_nodes:
-            x = burned_node.state[0] * CELL_SIZE
-            y = burned_node.state[1] * CELL_SIZE
-            layer2[y:y + CELL_SIZE, x:x + CELL_SIZE] = [173, 220, 255, 255]
-
-        # display the fire retardant nodes
-        for phos_chek_node in phos_chek_nodes:
-            x = phos_chek_node.state[0] * CELL_SIZE
-            y = phos_chek_node.state[1] * CELL_SIZE
-            layer2[y:y + CELL_SIZE, x:x + CELL_SIZE] = [255, 10, 10, 255]
-
-        # TODO ^ Speed this up in the future 
-        
-        # # Display the plane  
-        x = plane.state[0] * CELL_SIZE
-        y = plane.state[1] * CELL_SIZE
-        layer2[y:y + CELL_SIZE, x:x + CELL_SIZE] = [255, 255, 255, 255]
-        
-        if TRAIN_MODE: 
-            res = layer2
-        else:
-            # copy the first layer into the resulting image
-            res = np.uint8(layer1.copy()) 
-
-            # copy the first layer into the resulting image
-            cnd = layer2[:, :, 3] > 0
-
-            # copy the first layer into the resulting image
-            res[cnd] = layer2[cnd]
-
-        # add the score to the image 
-        pix: int = int(CELL_SIZE * BOARD_SIZE)
-        cv2.rectangle(res, ((pix-300), 0), (pix, (125)), (211, 211, 211), -1)
-
-        cv2.putText(res, text=f'Time: {fire_time} minutes', org=((pix-300), 50), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(0, 0, 0),thickness=2)
-        cv2.putText(res, text=f'Score: {curr_score}', org=((pix-300), 100), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(0, 0, 0),thickness=2)
-
-        # show the output image
-        cv2.imshow("Wildfire Environment", res)
-        key = cv2.waitKey(int(1000/SPEED))
-
-        # cv2.imshow("Wildfire Environment", np.uint8(board_states))
-        # key = cv2.waitKey(int(1000/SPEED))
-
-        # Return the key pressed. It is -1 if no key is pressed. 
-        return {'key': key, 'plane_x': x, 'plane_y': y}
-
-
     # Start the game by printing instructions
     print('w = top, a = left, s = down, d = right, p = exit the game')
 
     # Ugly trick to bring the window in focus
     win_focus()
 
+    # define blackened nodes (already burned)
+    burned_nodes = []
+    # define retardant nodes (PHOS-CHEK already dropped here)
+    phos_chek_nodes = []
+    board_start_state = np.zeros([BOARD_SIZE * CELL_SIZE, BOARD_SIZE * CELL_SIZE, 4])
+    # use this cache to speed up the rendering of the layered image
+    layer2_cache = board_start_state.copy()
+    old_burned_nodes = []
 
+    # define other parameters for this run 
     c = 0
     fire_time = 0
     curr_score: int = BOARD_SIZE*BOARD_SIZE
@@ -338,8 +348,11 @@ if __name__ == '__main__' :
         t = time.time()
         
         # Makes and displays the board_states
-        display_dict: dict = display(fire_time=fire_time, curr_score=curr_score)
+        display_dict: dict = display(fire_time=fire_time, curr_score=curr_score, 
+                                     layer2_cache=layer2_cache, old_burned_nodes=old_burned_nodes)
         key = display_dict['key']
+        old_burned_nodes = display_dict['old_burned_nodes']
+        layer2_cache = display_dict['layer2_cache']
 
         # Gets key presses and moves accordingly
         # 8 and 27 are delete and escape keys
@@ -387,13 +400,13 @@ if __name__ == '__main__' :
         else:
             c += 1
 
-        print(time.time() - t)
+        step_time: float = round(time.time() - t, 5)
+        print(step_time)
         
 
 """
 ----------------- TODOs -----------------
 
-1. Show time and current score at the end of the game for a few seconds (if TRAIN_MODE is False)
 2. Add a caching function to speed up the simulation (remove all those double for loops that run on every iteration)
 3. Apply constraints on the amount of phos chek you can drop at one time
 
