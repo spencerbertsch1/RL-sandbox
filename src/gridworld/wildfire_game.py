@@ -15,9 +15,9 @@ random.seed(10)
 
 # define globals 
 # Size of each cell in the board game
-CELL_SIZE = 15
+CELL_SIZE = 30
 # Number of cells along the width in the game
-BOARD_SIZE = 100
+BOARD_SIZE = 50
 # Change SPEED to make the game go faster
 SPEED = 15
 # Maximum speed at which the fire advances
@@ -28,14 +28,10 @@ FIRE_TIMESTEP = int(FIRE_SPEED*3)  # minutes
 WIND_DIRECTION = 4
 wind_direction_lookup = {'north': 1, 'northeast': 2, 'east': 3, 'southeast': 4, 'south': 5, 'southwest': 6, 'west': 7, 'northwest': 8}
 WIND_SPEED = 5
-
 # train mode - true if we want the simulations to run fast and we don't care about aesthetics
 TRAIN_MODE = True
-
 # Show the burned nodes 
 SHOW_BURNED_NODES = False
-
-
 
 
 class Plane:
@@ -307,7 +303,7 @@ if __name__ == '__main__' :
     plane = Plane(state=plane_start_state, phos_chek_dropped=False, direction=1)
 
     # initislize fire start location
-    fire_start_state = [(10, 10), (15, 55)]
+    fire_start_state = [(2, 7), (8, 3)]  # [(10, 10), (15, 55)]  # <-- good values for larger boards
     # node_map[fire_start_state[0]][fire_start_state[1]].burning = True
     burning_nodes: list = [node_map[fire_start_state[0][0]][fire_start_state[0][1]], 
                            node_map[fire_start_state[1][0]][fire_start_state[1][1]]]
