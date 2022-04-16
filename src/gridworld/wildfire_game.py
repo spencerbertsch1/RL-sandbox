@@ -321,10 +321,12 @@ if __name__ == '__main__' :
     background_image = cv2.imread('/Users/spencerbertsch/Desktop/dev/RL-sandbox/src/images/occidental_vet_hospital.png')
     layer1 = np.zeros([background_image.shape[0], background_image.shape[1], 4])
 
-    for i in range(layer1.shape[0]):
-        for j in range(layer1.shape[1]): 
-            # TODO we will eventually set up the RGB of the board depending on the fuel in each node
-            layer1[i][j] = np.uint8(np.append(background_image[i][j], 255))
+    if not TRAIN_MODE:
+        for i in range(layer1.shape[0]):
+            for j in range(layer1.shape[1]): 
+                # TODO we will eventually set up the RGB of the board depending on the fuel in each node
+                layer1[i][j] = np.uint8(np.append(background_image[i][j], 255))
+        # TODO ^^^ Speed up this step - for training we can skip this
 
     # Start the game by printing instructions
     print('w = top, a = left, s = down, d = right, p = exit the game')
@@ -415,7 +417,7 @@ if __name__ == '__main__' :
 """
 ----------------- TODOs -----------------
 
-2. Add a caching function to speed up the simulation (remove all those double for loops that run on every iteration)
-3. Apply constraints on the amount of phos chek you can drop at one time
+1. Apply constraints on the amount of phos chek you can drop at one time
+2. Apply the rest of the constraints too - airport for Phos Chek, refueling, etc. 
 
 """
