@@ -21,7 +21,7 @@ BOARD_SIZE = 100
 # Change SPEED to make the game go faster
 SPEED = 15
 # Maximum speed at which the fire advances
-FIRE_SPEED = 2
+FIRE_SPEED = 5
 # the amount of time in actual minutes that go by before the fire advances one step (this needs to be calibrated realistically)
 FIRE_TIMESTEP = int(FIRE_SPEED*3)  # minutes
 # Wind
@@ -30,7 +30,10 @@ wind_direction_lookup = {'north': 1, 'northeast': 2, 'east': 3, 'southeast': 4, 
 WIND_SPEED = 5
 
 # train mode - true if we want the simulations to run fast and we don't care about aesthetics
-TRAIN_MODE = False
+TRAIN_MODE = True
+
+# Show the burned nodes 
+SHOW_BURNED_NODES = False
 
 
 
@@ -235,13 +238,14 @@ def display(fire_time: int, curr_score: int, layer2_cache: np.ndarray, old_burne
     # We can use this to display all of the currently burning states 
 
     # only iterate through the NEW burned nodes, not all the burned nodes (increases speed) 
-    new_burned_nodes: list = list(set(burned_nodes) - set(old_burned_nodes))
-    old_burned_nodes.extend(new_burned_nodes)
+    # new_burned_nodes: list = list(set(burned_nodes) - set(old_burned_nodes))
+    # old_burned_nodes.extend(new_burned_nodes)
 
-    for burned_node in new_burned_nodes:
-        x = burned_node.state[0] * CELL_SIZE
-        y = burned_node.state[1] * CELL_SIZE
-        layer2[y:y + CELL_SIZE, x:x + CELL_SIZE] = [173, 220, 255, 255]
+    if SHOW_BURNED_NODES: 
+        for burned_node in new_burned_nodes:
+            x = burned_node.state[0] * CELL_SIZE
+            y = burned_node.state[1] * CELL_SIZE
+            layer2[y:y + CELL_SIZE, x:x + CELL_SIZE] = [173, 220, 255, 255]
     # TODO ^ Speed this up in the future 
 
     # create the layer 2 cache so we don't need to iterate through thousands of burned nodes for the render
