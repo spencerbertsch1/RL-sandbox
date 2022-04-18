@@ -15,9 +15,9 @@ random.seed(10)
 
 # define globals 
 # Size of each cell in the board game
-CELL_SIZE = 30
+CELL_SIZE = 15
 # Number of cells along the width in the game
-BOARD_SIZE = 50
+BOARD_SIZE = 100
 # Change SPEED to make the game go faster
 SPEED = 15
 # Maximum speed at which the fire advances
@@ -31,9 +31,9 @@ WIND_DIRECTION = 4
 wind_direction_lookup = {'north': 1, 'northeast': 2, 'east': 3, 'southeast': 4, 'south': 5, 'southwest': 6, 'west': 7, 'northwest': 8}
 WIND_SPEED = 5
 # train mode - true if we want the simulations to run fast and we don't care about aesthetics
-TRAIN_MODE = False
+TRAIN_MODE = True
 # Show the burned nodes 
-SHOW_BURNED_NODES = True
+SHOW_BURNED_NODES = False
 
 
 class Airport:
