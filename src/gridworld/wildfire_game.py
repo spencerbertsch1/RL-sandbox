@@ -21,26 +21,36 @@ BOARD_SIZE = 50
 # Change SPEED to make the game go faster
 SPEED = 15
 # Maximum speed at which the fire advances
-FIRE_SPEED = 5
+FIRE_SPEED = 15  # <-- inverse 
 # the amount of time in actual minutes that go by before the fire advances one step (this needs to be calibrated realistically)
 FIRE_TIMESTEP = int(FIRE_SPEED*3)  # minutes
+# define max amount of Phos Chek that a plane can carry (will depend on type of aircraft)
+MAX_PHOS_CHEK = 15
 # Wind
 WIND_DIRECTION = 4
 wind_direction_lookup = {'north': 1, 'northeast': 2, 'east': 3, 'southeast': 4, 'south': 5, 'southwest': 6, 'west': 7, 'northwest': 8}
 WIND_SPEED = 5
 # train mode - true if we want the simulations to run fast and we don't care about aesthetics
-TRAIN_MODE = True
+TRAIN_MODE = False
 # Show the burned nodes 
-SHOW_BURNED_NODES = False
+SHOW_BURNED_NODES = True
+
+
+class Airport:
+    """
+    Airport class - allows planes to fill more Phos Chek and get more fuel 
+    """
+    def __init__(self, state):
+        self.state = state    # [x, y] position of the airport in the grid 
 
 
 class Plane:
     """
     Plane (agent) for the wild fire RL environment 
     """
-    def __init__(self, state, phos_chek_dropped: bool, direction: int):
-        self.state = state                              # [x, y] position of the plane in the grid 
-        self.phos_chek_dropped = phos_chek_dropped      # bool representing whether or not the watery jell-foam has been dropped
+    def __init__(self, state, phos_chek_level: int, direction: int):
+        self.state = state                          # [x, y] position of the plane in the grid 
+        self.phos_chek_level = phos_chek_level      # int representing the amount of Phos Chek left in the plane
         self.direction = direction
 
     def move(self):
@@ -238,7 +248,7 @@ def display(fire_time: int, curr_score: int, layer2_cache: np.ndarray, old_burne
     # old_burned_nodes.extend(new_burned_nodes)
 
     if SHOW_BURNED_NODES: 
-        for burned_node in new_burned_nodes:
+        for burned_node in burned_nodes:
             x = burned_node.state[0] * CELL_SIZE
             y = burned_node.state[1] * CELL_SIZE
             layer2[y:y + CELL_SIZE, x:x + CELL_SIZE] = [173, 220, 255, 255]
@@ -257,6 +267,11 @@ def display(fire_time: int, curr_score: int, layer2_cache: np.ndarray, old_burne
         x = phos_chek_node.state[0] * CELL_SIZE
         y = phos_chek_node.state[1] * CELL_SIZE
         layer2[y:y + CELL_SIZE, x:x + CELL_SIZE] = [255, 10, 10, 255]
+
+    # display the airport 
+    airport_x = airport.state[0] * CELL_SIZE
+    airport_y = airport.state[1] * CELL_SIZE
+    layer2[airport_y:airport_y + CELL_SIZE, airport_x:airport_x + CELL_SIZE] = [255,255,0, 255]
 
     # Display the plane  
     x = plane.state[0] * CELL_SIZE
@@ -300,7 +315,7 @@ if __name__ == '__main__' :
 
     plane_start_state = [int((BOARD_SIZE - 1)/2), int((BOARD_SIZE - 1)/2)]
     # plane starts at the center of the board. 
-    plane = Plane(state=plane_start_state, phos_chek_dropped=False, direction=1)
+    plane = Plane(state=plane_start_state, phos_chek_level=MAX_PHOS_CHEK, direction=1)
 
     # initislize fire start location
     fire_start_state = [(2, 7), (8, 3)]  # [(10, 10), (15, 55)]  # <-- good values for larger boards
@@ -308,6 +323,8 @@ if __name__ == '__main__' :
     burning_nodes: list = [node_map[fire_start_state[0][0]][fire_start_state[0][1]], 
                            node_map[fire_start_state[1][0]][fire_start_state[1][1]]]
     # burning_nodes: list = [node_map[fire_start_state[0][0]][fire_start_state[0][1]]]
+
+    airport = Airport(state=[int((BOARD_SIZE - 3)), int((BOARD_SIZE - 3))])
 
     # for i in range(board_start_state.shape[0]):
     #     for j in range(board_start_state.shape[1]): 
@@ -383,8 +400,16 @@ if __name__ == '__main__' :
         plane.move()    
 
         if phos_check_dump:
-            # we are in a time of dumping the phos_chek so we add this node to the phos_chek nodes
-            phos_chek_nodes = get_phos_chek_nodes(plane_x=display_dict['plane_x'], plane_y=display_dict['plane_y'])
+            if plane.phos_chek_level > 0:
+                # we are in a time of dumping the phos_chek so we add this node to the phos_chek nodes
+                phos_chek_nodes = get_phos_chek_nodes(plane_x=display_dict['plane_x'], plane_y=display_dict['plane_y'])
+                # reduce Phos Chek level in the plane
+                plane.phos_chek_level = plane.phos_chek_level - 1
+
+        if plane.state == airport.state: 
+            # plane is stopping at the airport
+            phos_check_dump = False
+            plane.phos_chek_level = MAX_PHOS_CHEK
 
         # cause the fire to spread either deterministically or via a stochastic function 
         if c == FIRE_SPEED: 
@@ -413,7 +438,8 @@ if __name__ == '__main__' :
 """
 ----------------- TODOs -----------------
 
-1. Apply constraints on the amount of phos chek you can drop at one time
-2. Apply the rest of the constraints too - airport for Phos Chek, refueling, etc. 
+1. Keep the plan inside the environment 
+2. Apply constraints on the amount of phos chek you can drop at one time
+3. Apply the rest of the constraints too - airport for Phos Chek, refueling, etc. 
 
 """
