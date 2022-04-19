@@ -1,33 +1,453 @@
 import gym
 from gym import spaces
+import cv2
+import random
+import numpy as np
+import math
+import time
 	
+random.seed(10)
 
 
-# class CustomEnv(gym.Env):
-# 	"""Custom Environment that follows gym interface"""
-
-# 	def __init__(self, arg1, arg2, ...):
-# 		super(CustomEnv, self).__init__()
-# 		# Define action and observation space
-# 		# They must be gym.spaces objects
-# 		# Example when using discrete actions:
-# 		self.action_space = spaces.Discrete(N_DISCRETE_ACTIONS)
-# 		# Example for using image as input (channel-first; channel-last also works):
-# 		self.observation_space = spaces.Box(low=0, high=255,
-# 											shape=(N_CHANNELS, HEIGHT, WIDTH), dtype=np.uint8)
-
-# 	def step(self, action):
-# 		pass
-# 		return observation, reward, done, info
-
-# 	def reset(self):
-# 		pass
-# 		return observation  # reward, done, info can't be included
+class Airport:
+    """
+    Airport class - allows planes to fill more Phos Chek and get more fuel 
+    """
+    def __init__(self, state):
+        self.state = state    # [x, y] position of the airport in the grid 
 
 
-# 	def render(self, mode='human'):
-# 		pass
+class Plane:
+    """
+    Plane (agent) for the wild fire RL environment 
+    """
+    def __init__(self, state, phos_chek_level: int, direction: int):
+        self.state = state                          # [x, y] position of the plane in the grid 
+        self.phos_chek_level = phos_chek_level      # int representing the amount of Phos Chek left in the plane
+        self.direction = direction
+
+    def move(self):
+        # Checks what its current direction is and moves accordingly
+        if self.direction == 0:
+            self.state[0] += 1
+        elif self.direction == 1:
+            self.state[1] += 1
+        elif self.direction == 2:
+            self.state[0] -= 1
+        elif self.direction == 3:
+            self.state[1] -= 1
 
 
-# 	def close (self):
-# 		pass
+class Node:
+    """
+    Forest Node - node for the wild fire RL envoironment 
+    """
+
+    def __init__(self, state, heuristic, fuel=1, burn_speed=None, phos_chek=False, neighbors=None, burning=None):
+        self.state = state              # [x, y] position of the node in the grid 
+        self.heuristic = heuristic      # euclidean distance to closest human inhabited area 
+        self.burn_speed = burn_speed    # {1: slow (sandy area), 2: moderate (wet area), 3: fast (dry forest)}
+        self.fuel = fuel                # amount of remaining fuel in this node 
+        self.phos_chek = phos_chek      # phos_chek concentration in this cell
+        self.neighbors = neighbors      # 2-4 nodes that represent the adjacent nodes 
+        self.burning = burning          # bool representing whether or not the cell is burning
+
+
+
+
+
+
+class WildFireEnv(gym.Env):
+    """
+    Custom Environment that follows gym interface
+
+    This environment is designed to represent a wildfire with a single plane that can drop fire retardant
+    in an attempt to put out the fire.
+    """
+
+    def __init__(self):
+        super(WildFireEnv, self).__init__()
+        # Define action and observation space
+        # They must be gym.spaces objects
+        # Example when using discrete actions:
+        self.action_space = spaces.Discrete(4)
+        # Example for using image as input (channel-first; channel-last also works):
+        self.observation_space = spaces.Box(low=0, high=255,
+                                        shape=(N_CHANNELS, HEIGHT, WIDTH), dtype=np.uint8)
+
+    def step(self, action):
+        """
+        TODO
+        """
+        t = time.time()
+        
+        # Makes and displays the board_states
+        self.display_dict: dict = self.display(fire_time=fire_time, curr_score=curr_score, 
+                                     layer2_cache=layer2_cache, old_burned_nodes=old_burned_nodes)
+        self.key = self.display_dict['key']
+        self.old_burned_nodes = self.display_dict['old_burned_nodes']
+        self.layer2_cache = self.display_dict['layer2_cache']
+
+        # Gets key presses and moves accordingly
+        # 8 and 27 are delete and escape keys
+        # Arrow keys are tricky in OpenCV. So we use
+        # keys 'w', 'a','s','d' for movement. 
+        # w = top, a = left, s = down, d = right
+
+        if action == 0:
+            self.plane.direction = 0
+        elif action == 1:
+            self.plane.direction = 1
+        elif action == 2:
+            self.plane.direction = 2
+        elif action == 3:
+            self.plane.direction = 3
+        elif action == 4:
+            # activate airal "attack"
+            self.phos_check_dump = not self.phos_check_dump
+        # elif key == ord("p"): 
+        #     self.quit = True
+
+        # Moving the plane
+        self.plane.move()    
+
+        if self.phos_check_dump:
+            if self.plane.phos_chek_level > 0:
+                # we are in a time of dumping the phos_chek so we add this node to the phos_chek nodes
+                phos_chek_nodes = self.get_phos_chek_nodes(plane_x=self.display_dict['plane_x'], plane_y=self.display_dict['plane_y'])
+                # reduce Phos Chek level in the plane
+                self.plane.phos_chek_level = self.plane.phos_chek_level - 1
+
+        if self.plane.state == self.airport.state: 
+            # plane is stopping at the airport
+            self.phos_check_dump = False
+            self.plane.phos_chek_level = self.MAX_PHOS_CHEK
+
+        # cause the fire to spread either deterministically or via a stochastic function 
+        if self.c == self.FIRE_SPEED: 
+            if len(self.burning_nodes) == 0:
+                # the game is over, so we set done to True
+                self.done = True
+                self.print_results(fire_time=self.fire_time, curr_score=self.curr_score)
+            else:
+                self.burning_nodes = self.get_next_burning(self.burning_nodes, first_ignition=self.first_ignition)
+                self.first_ignition=False
+                self.c = 0
+                # increment the clock 
+                self.fire_time = self.fire_time + self.FIRE_TIMESTEP
+                self.curr_score = (self.BOARD_SIZE*self.BOARD_SIZE) - len(self.burned_nodes)
+        else:
+            self.c += 1
+
+        step_time: float = round(time.time() - t, 5)
+        print(step_time)
+        self.step_times.append(step_time)
+
+
+        info: dict = {}
+        return self.observation, self.reward, self.done, info
+
+
+    def reset(self):
+        """
+        TODO Add docstring
+        
+        """
+        self.done=False
+        # it's very important that these simulations are repeatable - we rely on random.seed() for this
+
+        # define globals 
+        # Size of each cell in the board game
+        self.CELL_SIZE = 15
+        # Number of cells along the width in the game
+        self.BOARD_SIZE = 100
+        # Change SPEED to make the game go faster
+        self.SPEED = 15
+        # Maximum speed at which the fire advances
+        self.FIRE_SPEED = 15  # <-- inverse 
+        # the amount of time in actual minutes that go by before the fire advances one step (this needs to be calibrated realistically)
+        self.FIRE_TIMESTEP = int(self.FIRE_SPEED*3)  # minutes
+        # define max amount of Phos Chek that a plane can carry (will depend on type of aircraft)
+        self.MAX_PHOS_CHEK = 15
+        # Wind
+        self.WIND_DIRECTION = 4
+        self.wind_direction_lookup = {'north': 1, 'northeast': 2, 'east': 3, 'southeast': 4, 'south': 5, 'southwest': 6, 'west': 7, 'northwest': 8}
+        self.WIND_SPEED = 5
+        # train mode - true if we want the simulations to run fast and we don't care about aesthetics
+        self.TRAIN_MODE = True
+        # Show the burned nodes 
+        self.SHOW_BURNED_NODES = False
+
+        # list of lists representing the board of all nodes 
+        self.node_map: list = generate_initial_nodes()
+
+        self.plane_start_state = [int((self.BOARD_SIZE - 1)/2), int((self.BOARD_SIZE - 1)/2)]
+        # plane starts at the center of the board. 
+        self.plane = Plane(state=self.plane_start_state, phos_chek_level=self.MAX_PHOS_CHEK, direction=1)
+
+        # initislize fire start location
+        self.fire_start_state = [(2, 7), (8, 3)]  # [(10, 10), (15, 55)]  # <-- good values for larger boards
+        # node_map[fire_start_state[0]][fire_start_state[1]].burning = True
+        self.burning_nodes: list = [self.node_map[self.fire_start_state[0][0]][self.fire_start_state[0][1]], 
+                                    self.node_map[self.fire_start_state[1][0]][self.fire_start_state[1][1]]]
+
+        self.airport = Airport(state=[int((self.BOARD_SIZE - 3)), int((self.BOARD_SIZE - 3))])
+
+        self.background_image = cv2.imread('/Users/spencerbertsch/Desktop/dev/RL-sandbox/src/images/occidental_vet_hospital.png')
+        self.layer1 = np.zeros([self.background_image.shape[0], self.background_image.shape[1], 4])
+
+        # define blackened nodes (already burned)
+        self.burned_nodes = []
+        # define retardant nodes (PHOS-CHEK already dropped here)
+        self.phos_chek_nodes = []
+        self.board_start_state = np.zeros([self.BOARD_SIZE * self.CELL_SIZE, self.BOARD_SIZE * self.CELL_SIZE, 4])
+        # use this cache to speed up the rendering of the layered image
+        self.layer2_cache = self.board_start_state.copy()
+        self.old_burned_nodes = []
+
+        # define other parameters for this run 
+        self.c = 0
+        self.fire_time = 0
+        self.curr_score: int = self.BOARD_SIZE*self.BOARD_SIZE
+        self.first_ignition = True
+        self.phos_check_dump = False
+        self.step_times = []
+
+        self.observation: dict = {
+            """
+            This encapsulates all the information that the agent can 'see' based on what 
+            the air tactical group supervisor knows at any given time.
+
+            TODO we may need to pass the states within these objects, but this should be fine
+            """
+            'burned_nodes':  self.burned_nodes,
+            'burning_nodes': self.burning_nodes, 
+            'phos_chek_nodes': self.phos_chek_nodes,
+            'plane': self.plane, 
+            'airport': self.airport 
+        }
+
+        return self.observation
+
+
+    def get_neighbors(self, node: Node, node_map: list):
+
+        x = node.state[0]
+        y = node.state[1]
+
+        neighbor_states: list = [(x2, y2) for x2 in range(x-1, x+2)
+                                    for y2 in range(y-1, y+2)
+                                    if (-1 < x <= self.BOARD_SIZE and
+                                        -1 < y <= self.BOARD_SIZE and
+                                        (x != x2 or y != y2) and
+                                        (0 <= x2 <= self.BOARD_SIZE) and
+                                        (0 <= y2 <= self.BOARD_SIZE))]
+
+        neighbor_nodes = []
+        
+        # perform the lookup in the node_map to get the neighbor nodes
+        for state in neighbor_states:
+            if (state[0] < self.BOARD_SIZE) and (state[1] < self.BOARD_SIZE):
+                n_node = node_map[state[0]][state[1]]
+                neighbor_nodes.append(n_node)
+
+        return neighbor_nodes
+
+    def get_down_wind_state(self, state: list) -> list:
+        """
+        :param: state - list of two ints representing [x, y] of the node in question - [10, 10] for example
+        Note that the origin is in the UPPER LEFT of the grid 
+        """
+        if self.WIND_DIRECTION == 1: 
+            # fire burns north
+            down_wind_state = [state[0]-1, state[1]]
+        elif self.WIND_DIRECTION == 4:
+            down_wind_state = [state[0]+1, state[1]+1]
+
+        return down_wind_state
+
+
+    def get_phos_chek_nodes(self, plane_x: int, plane_y: int, CELL_SIZE: int) -> list:
+        # all we have to do here is set the current node's phos_chek value to True and add it to the phos_check nodes
+        x: int = int(plane_x/CELL_SIZE)
+        y: int = int((plane_y/CELL_SIZE))
+        curr_plane_node: Node = self.node_map[x][y]
+
+        # we set the phos check to true here
+        curr_plane_node.phos_chek = True
+
+        self.phos_chek_nodes.append(curr_plane_node)
+
+        return self.phos_chek_nodes
+
+    def get_next_burning(self, currently_burning_nodes: list, first_ignition: bool) -> list:
+        
+        next_burning_nodes: list = []
+        
+        for node in currently_burning_nodes:
+
+            node.fuel = 0
+            node.burning = False
+            self.burned_nodes.append(node)
+            downwind_state = self.get_down_wind_state(state=node.state)
+
+            # generate random number between 0 and 1
+            r = random.uniform(0, 1)
+
+            for neighbor_node in node.neighbors:
+                
+                if (neighbor_node.fuel != 0) and (neighbor_node.burning == False):
+                    
+                    if first_ignition:
+                        next_burning_nodes.append(neighbor_node)
+                        neighbor_node.burning = True
+                    else:
+                        # lets first handle nodes that are not in the wind's direction
+                        if neighbor_node.state != downwind_state:
+                            if neighbor_node.phos_chek is False: 
+                                if r < 0.2:
+                                    next_burning_nodes.append(neighbor_node)
+                                    neighbor_node.burning = True
+
+                        # now we can handle the down wind nodes 
+                        if neighbor_node.state == downwind_state:
+                            if neighbor_node.phos_chek is False: 
+                                if r > 0.2:
+                                    next_burning_nodes.append(neighbor_node)
+                                    neighbor_node.burning = True
+
+        return next_burning_nodes
+
+    def make_score_box(self):
+        window_name = 'Score_Box'
+    
+        # Start coordinate, here (5, 5)
+        # represents the top left corner of rectangle
+        start_point = (5, 5)
+        # Ending coordinate, here (220, 220)
+        # represents the bottom right corner of rectangle
+        end_point = (220, 220)
+        # Blue color in BGR
+        color = (255, 0, 0)
+        # Line thickness of 2 px
+        thickness = 2
+        # Using cv2.rectangle() method
+        # Draw a rectangle with blue line borders of thickness of 2 px
+        image = cv2.rectangle(image, start_point, end_point, color, thickness)
+
+        return {'window_name': window_name, 'image': image}
+
+    def print_results(self, fire_time: int, curr_score: int):
+        s = '-'*50
+        print(f'\n\n\n{s} \nTOTAL TIME TAKEN TO EXTINGUISH FIRE: {fire_time} MINUTES')
+        print(f'FINAL SCORE: {curr_score} \n {s}')
+
+    def win_focus(self):
+        # Ugly trick to get the window in focus.
+        # Opens an image in fullscreen and then back to normal window
+        cv2.namedWindow("Wildfire Test", cv2.WINDOW_AUTOSIZE);
+        board_states = np.zeros([self.BOARD_SIZE * self.CELL_SIZE, self.BOARD_SIZE * self.CELL_SIZE, 3])
+        cv2.imshow("Wildfire Test", board_states);
+        cv2.setWindowProperty("Wildfire Test", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN);
+        cv2.waitKey(2000)
+        cv2.setWindowProperty("Wildfire Test", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_AUTOSIZE)
+
+
+    def generate_initial_nodes(self):
+
+        # TODO we will get these maps using the CV2 library on geospatial images 
+        fuel_remaining = np.ones([self.BOARD_SIZE, self.BOARD_SIZE])
+        burn_speeds = np.random.rand(self.BOARD_SIZE, self.BOARD_SIZE)
+        city_state = [int(self.BOARD_SIZE - 5), int(self.BOARD_SIZE - 5)]
+
+        # initialize np.array that we will fill with node objects
+        # all_nodes = np.zeros([BOARD_SIZE, BOARD_SIZE])
+
+        all_nodes = []
+        for i in range(self.BOARD_SIZE):
+            row: list = [random.uniform(0, 1)] * BOARD_SIZE
+            all_nodes.append(row)
+
+        for i in range(self.BOARD_SIZE):
+            for j in range(self.BOARD_SIZE):
+                all_nodes[i][j] =  Node(state=[i, j], heuristic=math.dist([i, j], city_state), \
+                                        burn_speed=burn_speeds[i][j], fuel=fuel_remaining[i][j], phos_chek=False, burning=False)
+
+        # now that we have the node map without neighbor nodes defined, lets define those here: 
+        for i in range(self.BOARD_SIZE):
+            for j in range(self.BOARD_SIZE):
+                all_nodes[i][j].neighbors = self.get_neighbors(node=all_nodes[i][j], node_map=all_nodes)
+
+        return all_nodes
+
+    def display(self, fire_time: int, curr_score: int, layer2_cache: np.ndarray, old_burned_nodes: list):
+
+        # Create a blank image
+        layer2 = layer2_cache.copy()
+
+        # draw the fire, burned area, and plane on the second layer 
+        # We can use this to display all of the currently burning states 
+
+        # only iterate through the NEW burned nodes, not all the burned nodes (increases speed) 
+        # new_burned_nodes: list = list(set(burned_nodes) - set(old_burned_nodes))
+        # old_burned_nodes.extend(new_burned_nodes)
+
+        if self.SHOW_BURNED_NODES: 
+            for burned_node in self.burned_nodes:
+                x = burned_node.state[0] * self.CELL_SIZE
+                y = burned_node.state[1] * self.CELL_SIZE
+                layer2[y:y + self.CELL_SIZE, x:x + self.CELL_SIZE] = [173, 220, 255, 255]
+        # TODO ^ Speed this up in the future 
+
+        # create the layer 2 cache so we don't need to iterate through thousands of burned nodes for the render
+        layer2_cache = layer2.copy()
+
+        for burning_node in self.burning_nodes:
+            x = burning_node.state[0] * self.CELL_SIZE
+            y = burning_node.state[1] * self.CELL_SIZE
+            layer2[y:y + self.CELL_SIZE, x:x + self.CELL_SIZE] = [0, 0, 255, 255]
+
+        # display the fire retardant nodes
+        for phos_chek_node in self.phos_chek_nodes:
+            x = phos_chek_node.state[0] * self.CELL_SIZE
+            y = phos_chek_node.state[1] * self.CELL_SIZE
+            layer2[y:y + self.CELL_SIZE, x:x + self.CELL_SIZE] = [255, 10, 10, 255]
+
+        # display the airport 
+        airport_x = self.airport.state[0] * self.CELL_SIZE
+        airport_y = self.airport.state[1] * self.CELL_SIZE
+        layer2[airport_y:airport_y + self.CELL_SIZE, airport_x:airport_x + self.CELL_SIZE] = [255,255,0, 255]
+
+        # Display the plane  
+        x = self.plane.state[0] * self.CELL_SIZE
+        y = self.plane.state[1] * self.CELL_SIZE
+        layer2[y:y + self.CELL_SIZE, x:x + self.CELL_SIZE] = [255, 255, 255, 255]
+        
+        if self.TRAIN_MODE: 
+            res = layer2
+        else:
+            # copy the first layer into the resulting image
+            res = np.uint8(layer1.copy()) 
+
+            # copy the first layer into the resulting image
+            cnd = layer2[:, :, 3] > 0
+
+            # copy the first layer into the resulting image
+            res[cnd] = layer2[cnd]
+
+        # add the score to the image 
+        pix: int = int(self.CELL_SIZE * self.BOARD_SIZE)
+        cv2.rectangle(res, ((pix-300), 0), (pix, (125)), (211, 211, 211), -1)
+
+        cv2.putText(res, text=f'Time: {fire_time} minutes', org=((pix-300), 50), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(0, 0, 0),thickness=2)
+        cv2.putText(res, text=f'Score: {curr_score}', org=((pix-300), 100), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(0, 0, 0),thickness=2)
+
+        # show the output image
+        cv2.imshow("Wildfire Environment", res)
+        key = cv2.waitKey(int(1000/self.SPEED))
+
+        # cv2.imshow("Wildfire Environment", np.uint8(board_states))
+        # key = cv2.waitKey(int(1000/SPEED))
+
+        # Return the key pressed. It is -1 if no key is pressed. 
+        return {'key': key, 'plane_x': x, 'plane_y': y, 'layer2_cache': layer2_cache, 'old_burned_nodes': old_burned_nodes}
