@@ -179,9 +179,9 @@ class WildFireEnv(gym.Env):
 
         # define globals 
         # Size of each cell in the board game
-        self.CELL_SIZE = 15
+        self.CELL_SIZE = 60
         # Number of cells along the width in the game
-        self.BOARD_SIZE = 100
+        self.BOARD_SIZE = 25
         # Change SPEED to make the game go faster
         self.SPEED = 15
         # Maximum speed at which the fire advances
@@ -195,9 +195,18 @@ class WildFireEnv(gym.Env):
         self.wind_direction_lookup = {'north': 1, 'northeast': 2, 'east': 3, 'southeast': 4, 'south': 5, 'southwest': 6, 'west': 7, 'northwest': 8}
         self.WIND_SPEED = 5
         # train mode - true if we want the simulations to run fast and we don't care about aesthetics
-        self.TRAIN_MODE = True
+        self.TRAIN_MODE = False
         # Show the burned nodes 
-        self.SHOW_BURNED_NODES = True
+        self.SHOW_BURNED_NODES = False
+
+        if self.TRAIN_MODE is False: 
+            background_image = cv2.imread('/Users/spencerbertsch/Desktop/dev/RL-sandbox/src/images/occidental_vet_hospital.png')
+            self.layer1 = np.zeros([background_image.shape[0], background_image.shape[1], 4])
+
+            for i in range(self.layer1.shape[0]):
+                for j in range(self.layer1.shape[1]): 
+                    # TODO we will eventually set up the RGB of the board depending on the fuel in each node
+                    self.layer1[i][j] = np.uint8(np.append(background_image[i][j], 255))
 
         # list of lists representing the board of all nodes 
         self.node_map: list = self.generate_initial_nodes()
@@ -213,9 +222,6 @@ class WildFireEnv(gym.Env):
                                     self.node_map[self.fire_start_state[1][0]][self.fire_start_state[1][1]]]
 
         self.airport = Airport(state=[int((self.BOARD_SIZE - 3)), int((self.BOARD_SIZE - 3))])
-
-        self.background_image = cv2.imread('/Users/spencerbertsch/Desktop/dev/RL-sandbox/src/images/occidental_vet_hospital.png')
-        self.layer1 = np.zeros([self.background_image.shape[0], self.background_image.shape[1], 4])
 
         # define blackened nodes (already burned)
         self.burned_nodes = []
@@ -467,7 +473,7 @@ class WildFireEnv(gym.Env):
             res = layer2
         else:
             # copy the first layer into the resulting image
-            res = np.uint8(layer1.copy()) 
+            res = np.uint8(self.layer1.copy()) 
 
             # copy the first layer into the resulting image
             cnd = layer2[:, :, 3] > 0
@@ -514,20 +520,13 @@ class WildFireEnv(gym.Env):
         for phos_chek_state in phos_chek_states:
             self.observation[phos_chek_state[0], phos_chek_state[1]] = 3
         
-        self.observation[self.plane.state[0], self.plane.state[1]] = 4
+        self.observation[self.plane.state[0], self.plane.state[1]] = 4  # <-- causing problems 
+        # FIXME ^^^ We need to implement logic so that the plane CANNOT fly off the board. If it's pushing 
+        # against a wall then is stays in the same place 
 
         self.observation[self.airport.state[0], self.airport.state[1]] = 5
 
-        # flatten to one dimension
-        s = np.squeeze(self.observation)
-        obs = []
-        for vec in s:
-            for element in vec: 
-                obs.append(element)
-
-        self.observation = np.array(obs)
-
         # test - remove later
-        self.observation = np.zeros(shape=(self.BOARD_SIZE, self.BOARD_SIZE, 1), dtype=np.uint8)
+        # self.observation = np.zeros(shape=(self.BOARD_SIZE, self.BOARD_SIZE, 1), dtype=np.uint8)
 
         return self.observation
