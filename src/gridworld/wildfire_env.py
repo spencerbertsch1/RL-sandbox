@@ -5,6 +5,7 @@ import random
 import numpy as np
 import math
 import time
+import matplotlib.pyplot as plt
 	
 random.seed(10)
 
@@ -53,10 +54,6 @@ class Node:
         self.burning = burning          # bool representing whether or not the cell is burning
 
 
-
-
-
-
 class WildFireEnv(gym.Env):
     """
     Custom Environment that follows gym interface
@@ -70,10 +67,21 @@ class WildFireEnv(gym.Env):
         # Define action and observation space
         # They must be gym.spaces objects
         # Example when using discrete actions:
-        self.action_space = spaces.Discrete(4)
+        self.action_space = spaces.Discrete(2)
         # Example for using image as input (channel-first; channel-last also works):
-        self.observation_space = spaces.Box(low=0, high=255,
-                                        shape=(N_CHANNELS, HEIGHT, WIDTH), dtype=np.uint8)
+        # self.observation_shape = (100, 100, 1)  # <-- MAKE SURE THIS MATCHES THE BOARD SIZE! (For observations of the board)
+        # low_array = np.zeros(self.observation_shape)
+        # high_array = np.ones(self.observation_shape)*255
+
+        self.observation_shape = (3,)
+        print(self.observation_shape)
+        self.observation_space = spaces.Box(
+                                            low=-5, 
+                                            high=5,
+                                            # low=low_array, 
+                                            # high=high_array,
+                                            shape=self.observation_shape, 
+                                            dtype=np.uint8)
 
     def step(self, action):
         """
@@ -82,8 +90,8 @@ class WildFireEnv(gym.Env):
         t = time.time()
         
         # Makes and displays the board_states
-        self.display_dict: dict = self.display(fire_time=fire_time, curr_score=curr_score, 
-                                     layer2_cache=layer2_cache, old_burned_nodes=old_burned_nodes)
+        self.display_dict: dict = self.display(fire_time=self.fire_time, curr_score=self.curr_score, 
+                                     layer2_cache=self.layer2_cache, old_burned_nodes=self.old_burned_nodes)
         self.key = self.display_dict['key']
         self.old_burned_nodes = self.display_dict['old_burned_nodes']
         self.layer2_cache = self.display_dict['layer2_cache']
@@ -114,7 +122,7 @@ class WildFireEnv(gym.Env):
         if self.phos_check_dump:
             if self.plane.phos_chek_level > 0:
                 # we are in a time of dumping the phos_chek so we add this node to the phos_chek nodes
-                phos_chek_nodes = self.get_phos_chek_nodes(plane_x=self.display_dict['plane_x'], plane_y=self.display_dict['plane_y'])
+                self.phos_chek_nodes = self.get_phos_chek_nodes(plane_x=self.display_dict['plane_x'], plane_y=self.display_dict['plane_y'])
                 # reduce Phos Chek level in the plane
                 self.plane.phos_chek_level = self.plane.phos_chek_level - 1
 
@@ -143,6 +151,26 @@ class WildFireEnv(gym.Env):
         print(step_time)
         self.step_times.append(step_time)
 
+
+        # calculate the reward
+        self.reward = self.calculate_reward()
+
+        # define new observation after the step 
+        self.observation = self.make_observation()
+
+        # self.observation: dict = {
+        #     """
+        #     This encapsulates all the information that the agent can 'see' based on what 
+        #     the air tactical group supervisor knows at any given time.
+
+        #     TODO we may need to pass the states within these objects, but this should be fine
+        #     """
+        #     'burned_nodes':  self.burned_nodes,
+        #     'burning_nodes': self.burning_nodes, 
+        #     'phos_chek_nodes': self.phos_chek_nodes,
+        #     'plane': self.plane, 
+        #     'airport': self.airport 
+        # }
 
         info: dict = {}
         return self.observation, self.reward, self.done, info
@@ -176,10 +204,10 @@ class WildFireEnv(gym.Env):
         # train mode - true if we want the simulations to run fast and we don't care about aesthetics
         self.TRAIN_MODE = True
         # Show the burned nodes 
-        self.SHOW_BURNED_NODES = False
+        self.SHOW_BURNED_NODES = True
 
         # list of lists representing the board of all nodes 
-        self.node_map: list = generate_initial_nodes()
+        self.node_map: list = self.generate_initial_nodes()
 
         self.plane_start_state = [int((self.BOARD_SIZE - 1)/2), int((self.BOARD_SIZE - 1)/2)]
         # plane starts at the center of the board. 
@@ -205,6 +233,9 @@ class WildFireEnv(gym.Env):
         self.layer2_cache = self.board_start_state.copy()
         self.old_burned_nodes = []
 
+        # Ugly trick to bring the window in focus
+        self.win_focus()
+
         # define other parameters for this run 
         self.c = 0
         self.fire_time = 0
@@ -213,21 +244,38 @@ class WildFireEnv(gym.Env):
         self.phos_check_dump = False
         self.step_times = []
 
-        self.observation: dict = {
-            """
-            This encapsulates all the information that the agent can 'see' based on what 
-            the air tactical group supervisor knows at any given time.
+        # todo we could add more dimansions to this later to add multiple values to the same cell...
+        self.observation = self.make_observation()
 
-            TODO we may need to pass the states within these objects, but this should be fine
-            """
-            'burned_nodes':  self.burned_nodes,
-            'burning_nodes': self.burning_nodes, 
-            'phos_chek_nodes': self.phos_chek_nodes,
-            'plane': self.plane, 
-            'airport': self.airport 
-        }
+        # to visualize the observation
+        # plt.imshow(self.observation, cmap='hot', interpolation='nearest')
+        # plt.show()
 
+        print('something')
+    
         return self.observation
+
+
+    def calculate_reward(self):
+        """
+        Generate the reward after each step 
+        """
+        if self.done:
+            self.reward = self.curr_score
+        else:
+            self.reward = self.curr_score  # TODO implement below logic
+        
+        
+        # TODO do all of this later...
+        # else:
+        #     # if the plane has phos chek and it's flying towards the fire
+        #     if (self.plane.phos_chek_level > 0):
+        #         pass
+
+        #     # if the plane has NO phos chek and it's flying towards the airport 
+        #     if (self.plane.phos_chek_level == 0):
+        #         pass
+
 
 
     def get_neighbors(self, node: Node, node_map: list):
@@ -337,10 +385,10 @@ class WildFireEnv(gym.Env):
 
         return {'window_name': window_name, 'image': image}
 
-    def print_results(self, fire_time: int, curr_score: int):
+    def print_results(self):
         s = '-'*50
-        print(f'\n\n\n{s} \nTOTAL TIME TAKEN TO EXTINGUISH FIRE: {fire_time} MINUTES')
-        print(f'FINAL SCORE: {curr_score} \n {s}')
+        print(f'\n\n\n{s} \nTOTAL TIME TAKEN TO EXTINGUISH FIRE: {self.fire_time} MINUTES')
+        print(f'FINAL SCORE: {self.curr_score} \n {s}')
 
     def win_focus(self):
         # Ugly trick to get the window in focus.
@@ -365,7 +413,7 @@ class WildFireEnv(gym.Env):
 
         all_nodes = []
         for i in range(self.BOARD_SIZE):
-            row: list = [random.uniform(0, 1)] * BOARD_SIZE
+            row: list = [random.uniform(0, 1)] * self.BOARD_SIZE
             all_nodes.append(row)
 
         for i in range(self.BOARD_SIZE):
@@ -451,3 +499,48 @@ class WildFireEnv(gym.Env):
 
         # Return the key pressed. It is -1 if no key is pressed. 
         return {'key': key, 'plane_x': x, 'plane_y': y, 'layer2_cache': layer2_cache, 'old_burned_nodes': old_burned_nodes}
+
+    def make_observation(self):
+        """
+        Generate the observation
+        
+        """
+        self.observation = np.zeros((self.BOARD_SIZE, self.BOARD_SIZE, 1))
+
+        # we set the burned states in the matrix to 1
+        burned_states = [x.state for x in self.burned_nodes] 
+        for burned_state in burned_states:
+            self.observation[burned_state[0], burned_state[1]] = 1
+
+        # we set the burning states in the matrix to 1
+        burning_states = [x.state for x in self.burning_nodes] 
+        for burning_state in burning_states:
+            self.observation[burning_state[0], burning_state[1]] = 2
+
+        # we set the phos chek states in the matrix to 1
+        phos_chek_states = [x.state for x in self.phos_chek_nodes] 
+        for phos_chek_state in phos_chek_states:
+            self.observation[phos_chek_state[0], phos_chek_state[1]] = 3
+        
+        self.observation[self.plane.state[0], self.plane.state[1]] = 4
+
+        self.observation[self.airport.state[0], self.airport.state[1]] = 5
+
+        # flatten to one dimension
+        s = np.squeeze(self.observation)
+        obs = []
+        for vec in s:
+            for element in vec: 
+                obs.append(element)
+
+        self.observation = np.array(obs)
+
+        # test - remove later
+        self.observation = np.array([1, 2, 3])
+
+        if self.observation_shape == self.observation.shape: 
+            print(f'{self.observation_shape} = {self.observation.shape}, so we should be good to go.' )
+        else: 
+            print(f'{self.observation_shape} != {self.observation.shape}, we have a problem.' )
+
+        return self.observation
