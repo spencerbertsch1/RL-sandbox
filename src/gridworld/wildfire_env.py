@@ -62,18 +62,19 @@ class WildFireEnv(gym.Env):
     in an attempt to put out the fire.
     """
 
+    BOARD_SIZE = 100
+
     def __init__(self):
         super(WildFireEnv, self).__init__()
         # Define action and observation space
         # They must be gym.spaces objects
         # Example when using discrete actions:
-        self.action_space = spaces.Discrete(2)
+        self.action_space = spaces.Discrete(5)
         # Example for using image as input (channel-first; channel-last also works):
         # self.observation_shape = (100, 100, 1)  # <-- MAKE SURE THIS MATCHES THE BOARD SIZE! (For observations of the board)
-        low_array = np.zeros(3)
-        high_array = np.ones(3)*255
-        self.observation_space = spaces.Box(low=low_array, high=high_array, dtype=np.int64)
-        # self.observation_space = spaces.Box(low=np.array([0, 0, 0]), high=np.array([255, 255, 255]), dtype=np.int64)
+        low = np.zeros(shape=(self.BOARD_SIZE, self.BOARD_SIZE, 1), dtype=np.uint8)
+        high =  np.ones(shape=(self.BOARD_SIZE, self.BOARD_SIZE, 1), dtype=np.uint8)*255
+        self.observation_space = spaces.Box(low=low, high=high, dtype=np.int64)
 
     def step(self, action):
         """
@@ -306,10 +307,10 @@ class WildFireEnv(gym.Env):
         return down_wind_state
 
 
-    def get_phos_chek_nodes(self, plane_x: int, plane_y: int, CELL_SIZE: int) -> list:
+    def get_phos_chek_nodes(self, plane_x: int, plane_y: int) -> list:  
         # all we have to do here is set the current node's phos_chek value to True and add it to the phos_check nodes
-        x: int = int(plane_x/CELL_SIZE)
-        y: int = int((plane_y/CELL_SIZE))
+        x: int = int(plane_x/self.CELL_SIZE)
+        y: int = int((plane_y/self.CELL_SIZE))
         curr_plane_node: Node = self.node_map[x][y]
 
         # we set the phos check to true here
@@ -496,7 +497,7 @@ class WildFireEnv(gym.Env):
         Generate the observation
         
         """
-        self.observation = np.zeros((self.BOARD_SIZE, self.BOARD_SIZE, 1))
+        self.observation = np.zeros(shape=(self.BOARD_SIZE, self.BOARD_SIZE, 1), dtype=np.uint8)
 
         # we set the burned states in the matrix to 1
         burned_states = [x.state for x in self.burned_nodes] 
@@ -527,6 +528,6 @@ class WildFireEnv(gym.Env):
         self.observation = np.array(obs)
 
         # test - remove later
-        self.observation = np.array([1, 2, 3])
+        self.observation = np.zeros(shape=(self.BOARD_SIZE, self.BOARD_SIZE, 1), dtype=np.uint8)
 
         return self.observation
