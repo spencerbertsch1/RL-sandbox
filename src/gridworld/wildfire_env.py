@@ -70,18 +70,10 @@ class WildFireEnv(gym.Env):
         self.action_space = spaces.Discrete(2)
         # Example for using image as input (channel-first; channel-last also works):
         # self.observation_shape = (100, 100, 1)  # <-- MAKE SURE THIS MATCHES THE BOARD SIZE! (For observations of the board)
-        # low_array = np.zeros(self.observation_shape)
-        # high_array = np.ones(self.observation_shape)*255
-
-        self.observation_shape = (3,)
-        print(self.observation_shape)
-        self.observation_space = spaces.Box(
-                                            low=-5, 
-                                            high=5,
-                                            # low=low_array, 
-                                            # high=high_array,
-                                            shape=self.observation_shape, 
-                                            dtype=np.uint8)
+        low_array = np.zeros(3)
+        high_array = np.ones(3)*255
+        self.observation_space = spaces.Box(low=low_array, high=high_array, dtype=np.int64)
+        # self.observation_space = spaces.Box(low=np.array([0, 0, 0]), high=np.array([255, 255, 255]), dtype=np.int64)
 
     def step(self, action):
         """
@@ -250,8 +242,6 @@ class WildFireEnv(gym.Env):
         # to visualize the observation
         # plt.imshow(self.observation, cmap='hot', interpolation='nearest')
         # plt.show()
-
-        print('something')
     
         return self.observation
 
@@ -261,9 +251,9 @@ class WildFireEnv(gym.Env):
         Generate the reward after each step 
         """
         if self.done:
-            self.reward = self.curr_score
+            self.reward = float(self.curr_score)
         else:
-            self.reward = self.curr_score  # TODO implement below logic
+            self.reward = float(self.curr_score)  # TODO implement below logic
         
         
         # TODO do all of this later...
@@ -276,6 +266,7 @@ class WildFireEnv(gym.Env):
         #     if (self.plane.phos_chek_level == 0):
         #         pass
 
+        return self.reward
 
 
     def get_neighbors(self, node: Node, node_map: list):
@@ -537,10 +528,5 @@ class WildFireEnv(gym.Env):
 
         # test - remove later
         self.observation = np.array([1, 2, 3])
-
-        if self.observation_shape == self.observation.shape: 
-            print(f'{self.observation_shape} = {self.observation.shape}, so we should be good to go.' )
-        else: 
-            print(f'{self.observation_shape} != {self.observation.shape}, we have a problem.' )
 
         return self.observation
