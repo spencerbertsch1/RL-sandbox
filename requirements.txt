@@ -1,4 +1,4 @@
-gym==0.22.0
+gym==0.22.0  # 0.23.1
 pygame==2.1.2
 jupyterlab==3.3.0
 matplotlib==3.5.1
@@ -6,7 +6,7 @@ opencv-python==4.5.5.62
 box2d-py==2.3.8
 box2d==2.3.2
 box2d-kengz==2.3.3
-stable-baselines3==1.5.0
+stable-baselines3==1.5.0  # <-- bug fix, 1.4.0
 plotly==5.7.0
 plotly-express==0.4.1
 
