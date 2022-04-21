@@ -20,7 +20,7 @@ class TestEnv(gym.Env):
         low = np.zeros(self.BOARD_SIZE, dtype=int)
         high =  np.array(self.BOARD_SIZE, dtype=int) - np.ones(self.BOARD_SIZE, dtype=int)
         # self.observation_space = spaces.Box(low, high, dtype=np.int64)
-        self.observation_space = spaces.Box(low=np.array([0]), high=np.array([255]), dtype=np.int64)
+        self.observation_space = spaces.Box(low=np.array([0, 0, 0]), high=np.array([255, 255, 255]), dtype=np.int64)
 
     def step(self, action):
         
@@ -38,7 +38,8 @@ class TestEnv(gym.Env):
         else: 
             self.done = False
 
-        self.observation = np.array([38 + random.randint(-3,3)]).astype(float)
+        # self.observation = np.array([38 + random.randint(-3,3)]).astype(float)
+        self.observation = self.environment
 
         info = {}
         return self.observation, self.reward, self.done, info
@@ -49,7 +50,9 @@ class TestEnv(gym.Env):
 
         self.environment = np.array([0, 0, 0])
 
-        self.observation = np.array([38 + random.randint(-3,3)]).astype(float)
+        self.observation = self.environment
+
+        # self.observation = np.array([38 + random.randint(-3,3)]).astype(float)
 
         return self.observation  # reward, done, info can't be included
 
