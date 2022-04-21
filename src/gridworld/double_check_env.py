@@ -3,8 +3,8 @@ from wildfire_env import WildFireEnv
 from test_env import TestEnv
 from portfolio_opt import PortfolioOptEnv
 
-env = TestEnv()
-episodes = 50
+env = WildFireEnv()
+episodes = 3
 
 for episode in range(episodes):
     done = False
