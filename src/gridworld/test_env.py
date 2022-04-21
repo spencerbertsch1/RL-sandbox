@@ -3,10 +3,11 @@ from gym import spaces
 import numpy as np
 import random
 
+
 class TestEnv(gym.Env):
     """Custom Environment that follows gym interface"""
 
-    BOARD_SIZE = 3  # 3x3 board 
+    BOARD_SIZE: int = 100
 
     def __init__(self):
         super(TestEnv, self).__init__()
@@ -17,23 +18,23 @@ class TestEnv(gym.Env):
         self.action_space = spaces.Discrete(3)
         # Example for using image as input (channel-first; channel-last also works):
         # observation is the x, y coordinate of the grid
-        low = np.zeros(self.BOARD_SIZE, dtype=int)
-        high =  np.array(self.BOARD_SIZE, dtype=int) - np.ones(self.BOARD_SIZE, dtype=int)
+        low = np.zeros(shape=(self.BOARD_SIZE, self.BOARD_SIZE, 1), dtype=np.uint8)
+        high =  np.ones(shape=(self.BOARD_SIZE, self.BOARD_SIZE, 1), dtype=np.uint8)*255
         # self.observation_space = spaces.Box(low, high, dtype=np.int64)
-        self.observation_space = spaces.Box(low=np.array([0, 0, 0]), high=np.array([255, 255, 255]), dtype=np.int64)
+        self.observation_space = spaces.Box(low=low, high=high, dtype=np.uint8)
 
     def step(self, action):
         
         if action == 0:
-            self.environment[0] += 1 
+            self.environment[0, 0] += 1 
         elif action == 1: 
-            self.environment[1] += 1
+            self.environment[1, 1] += 1
         elif action == 2: 
-            self.environment[2] += 1
+            self.environment[2, 2] += 1
 
-        self.reward = float(sum(self.environment))
+        self.reward = float(self.environment.sum())
 
-        if sum(self.environment) > 765: 
+        if self.environment.sum() > 765: 
             self.done = True
         else: 
             self.done = False
@@ -48,7 +49,8 @@ class TestEnv(gym.Env):
         # we observe where we are on the board
         # self.observation = np.zeros(2)
 
-        self.environment = np.array([0, 0, 0])
+        # self.environment = np.array([0, 0, 0])
+        self.environment = np.zeros(shape=(self.BOARD_SIZE, self.BOARD_SIZE, 1), dtype=np.uint8)
 
         self.observation = self.environment
 
