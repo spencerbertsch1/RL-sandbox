@@ -67,8 +67,8 @@ class WildFireEnv(gym.Env):
     in an attempt to put out the fire.
     """
 
-    BOARD_SIZE = 25
-    CELL_SIZE = 60
+    BOARD_SIZE = 50
+    CELL_SIZE = 30
     # ^^^ ensure the product of these two is 1,500!
 
     def __init__(self):
@@ -258,6 +258,8 @@ class WildFireEnv(gym.Env):
 
         # todo we could add more dimansions to this later to add multiple values to the same cell...
         self.observation = self.make_observation()
+
+        self.reward = 0
 
         # to visualize the observation
         # plt.imshow(self.observation, cmap='hot', interpolation='nearest')
@@ -543,11 +545,23 @@ class WildFireEnv(gym.Env):
                     self.reward = self.reward - 1
 
             else:
-                self.reward = random.choice([1, 2, 3])  # <-- REMOVE LATER! ONLY FOR TESTING
-                #     # if the plane has phos chek and it's flying towards the fire
-            #     if (self.plane.phos_chek_level > 0):
-            #         pass
+                # here we want to reward the plane if it's flying towards ANY part of the fire. 
+                # TODO vectorize this to make it faster in the future!!! 
+                
+                flying_towards_any_burning_node: bool = False
+                burning_states = [x.state for x in self.burning_nodes] 
+                for burning_state in burning_states:
+                    prev_dist_to_buring_state = dist(self.plane.previous_state, burning_state)
+                    curr_dist_to_buring_state = dist(self.plane.state, burning_state)
 
-
+                    # we want to reward the agent if it flies towards the fire here
+                    if curr_dist_to_buring_state < prev_dist_to_buring_state:
+                        self.reward = self.reward + 1
+                        flying_towards_any_burning_node = True
+                        break
+                
+                # here we penalize the agent if it's flying in a direction that's away from ALL the burning nodes
+                if not flying_towards_any_burning_node:
+                    self.reward = self.reward - 1
 
         return self.reward
