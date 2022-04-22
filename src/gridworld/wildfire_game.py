@@ -48,12 +48,16 @@ class Plane:
     """
     Plane (agent) for the wild fire RL environment 
     """
-    def __init__(self, state, phos_chek_level: int, direction: int):
-        self.state = state                          # [x, y] position of the plane in the grid 
+    def __init__(self, state, previous_state, phos_chek_level: int, direction: int):
+        self.state = state                          # [x, y] position of the plane in the grid  
+        self.previous_state = previous_state        # [x, y] position of the plane's previous position in the grid  
         self.phos_chek_level = phos_chek_level      # int representing the amount of Phos Chek left in the plane
         self.direction = direction
 
     def move(self):
+        # update the previous state to the current state before we move the plane
+        self.previous_state = self.state.copy()
+
         # Checks what its current direction is and moves accordingly
         if self.direction == 0:
             self.state[0] += 1
@@ -315,7 +319,7 @@ if __name__ == '__main__' :
 
     plane_start_state = [int((BOARD_SIZE - 1)/2), int((BOARD_SIZE - 1)/2)]
     # plane starts at the center of the board. 
-    plane = Plane(state=plane_start_state, phos_chek_level=MAX_PHOS_CHEK, direction=1)
+    plane = Plane(state=plane_start_state, previous_state=plane_start_state, phos_chek_level=MAX_PHOS_CHEK, direction=1)
 
     # initislize fire start location
     fire_start_state = [(2, 7), (8, 3)]  # [(10, 10), (15, 55)]  # <-- good values for larger boards
