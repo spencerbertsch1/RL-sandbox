@@ -442,8 +442,8 @@ if __name__ == '__main__' :
 """
 ----------------- TODOs -----------------
 
-1. Keep the plan inside the environment 
-2. Apply constraints on the amount of phos chek you can drop at one time
-3. Apply the rest of the constraints too - airport for Phos Chek, refueling, etc. 
+1. Keep the plane inside the environment 
+2. add new section of reward so that if you drop phos-chek down wind of fire it's a big reward
+ ++ if you drop phos chek away from the fire its a big penalty 
 
 """
