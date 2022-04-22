@@ -67,7 +67,9 @@ class WildFireEnv(gym.Env):
     in an attempt to put out the fire.
     """
 
-    BOARD_SIZE = 100
+    BOARD_SIZE = 25
+    CELL_SIZE = 60
+    # ^^^ ensure the product of these two is 1,500!
 
     def __init__(self):
         super(WildFireEnv, self).__init__()
@@ -184,10 +186,13 @@ class WildFireEnv(gym.Env):
         # it's very important that these simulations are repeatable - we rely on random.seed() for this
 
         # define globals 
+
+        # THESE ARE NOW CLASS VARIABLES !!! CHANGE THEM AT THE CLASS LEVEL!
         # Size of each cell in the board game
-        self.CELL_SIZE = 60
+        # self.CELL_SIZE = 15
         # Number of cells along the width in the game
-        self.BOARD_SIZE = 25
+        # self.BOARD_SIZE = 100
+
         # Change SPEED to make the game go faster
         self.SPEED = 15
         # Maximum speed at which the fire advances
