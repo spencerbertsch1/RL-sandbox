@@ -4,6 +4,7 @@ import cv2
 import random
 import numpy as np
 import math
+from math import dist
 import time
 import matplotlib.pyplot as plt
 	
@@ -22,12 +23,16 @@ class Plane:
     """
     Plane (agent) for the wild fire RL environment 
     """
-    def __init__(self, state, phos_chek_level: int, direction: int):
-        self.state = state                          # [x, y] position of the plane in the grid 
+    def __init__(self, state, previous_state, phos_chek_level: int, direction: int):
+        self.state = state                          # [x, y] position of the plane in the grid  
+        self.previous_state = previous_state        # [x, y] position of the plane's previous position in the grid  
         self.phos_chek_level = phos_chek_level      # int representing the amount of Phos Chek left in the plane
         self.direction = direction
 
     def move(self):
+        # update the previous state to the current state before we move the plane
+        self.previous_state = self.state.copy()
+
         # Checks what its current direction is and moves accordingly
         if self.direction == 0:
             self.state[0] += 1
@@ -74,7 +79,8 @@ class WildFireEnv(gym.Env):
         # self.observation_shape = (100, 100, 1)  # <-- MAKE SURE THIS MATCHES THE BOARD SIZE! (For observations of the board)
         low = np.zeros(shape=(self.BOARD_SIZE, self.BOARD_SIZE, 1), dtype=np.uint8)
         high =  np.ones(shape=(self.BOARD_SIZE, self.BOARD_SIZE, 1), dtype=np.uint8)*255
-        self.observation_space = spaces.Box(low=low, high=high, dtype=np.int64)
+        # self.observation_space = spaces.Box(low, high, dtype=np.int64)
+        self.observation_space = spaces.Box(low=low, high=high, dtype=np.uint8)
 
     def step(self, action):
         """
@@ -129,7 +135,7 @@ class WildFireEnv(gym.Env):
             if len(self.burning_nodes) == 0:
                 # the game is over, so we set done to True
                 self.done = True
-                self.print_results(fire_time=self.fire_time, curr_score=self.curr_score)
+                self.print_results()
             else:
                 self.burning_nodes = self.get_next_burning(self.burning_nodes, first_ignition=self.first_ignition)
                 self.first_ignition=False
@@ -195,7 +201,7 @@ class WildFireEnv(gym.Env):
         self.wind_direction_lookup = {'north': 1, 'northeast': 2, 'east': 3, 'southeast': 4, 'south': 5, 'southwest': 6, 'west': 7, 'northwest': 8}
         self.WIND_SPEED = 5
         # train mode - true if we want the simulations to run fast and we don't care about aesthetics
-        self.TRAIN_MODE = False
+        self.TRAIN_MODE = True
         # Show the burned nodes 
         self.SHOW_BURNED_NODES = False
 
@@ -212,8 +218,10 @@ class WildFireEnv(gym.Env):
         self.node_map: list = self.generate_initial_nodes()
 
         self.plane_start_state = [int((self.BOARD_SIZE - 1)/2), int((self.BOARD_SIZE - 1)/2)]
+        
         # plane starts at the center of the board. 
-        self.plane = Plane(state=self.plane_start_state, phos_chek_level=self.MAX_PHOS_CHEK, direction=1)
+        self.plane = Plane(state=self.plane_start_state, previous_state=self.plane_start_state, 
+                           phos_chek_level=self.MAX_PHOS_CHEK, direction=1)
 
         # initislize fire start location
         self.fire_start_state = [(2, 7), (8, 3)]  # [(10, 10), (15, 55)]  # <-- good values for larger boards
@@ -251,29 +259,6 @@ class WildFireEnv(gym.Env):
         # plt.show()
     
         return self.observation
-
-
-    def calculate_reward(self):
-        """
-        Generate the reward after each step 
-        """
-        if self.done:
-            self.reward = float(self.curr_score)
-        else:
-            self.reward = float(self.curr_score)  # TODO implement below logic
-        
-        
-        # TODO do all of this later...
-        # else:
-        #     # if the plane has phos chek and it's flying towards the fire
-        #     if (self.plane.phos_chek_level > 0):
-        #         pass
-
-        #     # if the plane has NO phos chek and it's flying towards the airport 
-        #     if (self.plane.phos_chek_level == 0):
-        #         pass
-
-        return self.reward
 
 
     def get_neighbors(self, node: Node, node_map: list):
@@ -530,3 +515,34 @@ class WildFireEnv(gym.Env):
         # self.observation = np.zeros(shape=(self.BOARD_SIZE, self.BOARD_SIZE, 1), dtype=np.uint8)
 
         return self.observation
+
+
+    def calculate_reward(self):
+        """
+        Generate the reward after each step 
+        """
+        if self.done:
+            self.reward = float(self.curr_score)
+        else:
+
+            # if the plane has NO Phos Chek        
+            if (self.plane.phos_chek_level == 0):
+                # if the plane has NO phos chek and it's flying towards the airport 
+                prev_dist_to_airport = dist(self.plane.previous_state, self.airport.state)
+                curr_dist_to_airport = dist(self.plane.state, self.airport.state)
+                
+                # we want to reward the agent if it flies towards the airport here
+                if curr_dist_to_airport < prev_dist_to_airport:
+                    self.reward = self.reward + 1
+                else:
+                    self.reward = self.reward - 1
+
+            else:
+                self.reward = random.choice([1, 2, 3])  # <-- REMOVE LATER! ONLY FOR TESTING
+                #     # if the plane has phos chek and it's flying towards the fire
+            #     if (self.plane.phos_chek_level > 0):
+            #         pass
+
+
+
+        return self.reward
