@@ -67,7 +67,17 @@ class Plane:
             self.state[0] -= 1
         elif self.direction == 3:
             self.state[1] -= 1
+            
+        # TODO don't escape the environment... 
+        # we now have self.previous_state and we have self.state... So we can use this information to 
+        # find out if we're flying into a wall or corner and adjust accordingly
 
+        # if we are going to fly off of the environmnet... 
+        # test if we're in a corner
+            # if yes, then fly perpendicular to the other wall
+                # update self.direction accordingly 
+            # if no then randomly select a perpendicular direction and fly that way
+                # update self.direction accordingly 
 
 class Node:
     """
