@@ -4,7 +4,7 @@ from test_env import TestEnv
 from portfolio_opt import PortfolioOptEnv
 
 env = WildFireEnv()
-episodes = 3
+episodes = 2
 
 for episode in range(episodes):
     done = False
