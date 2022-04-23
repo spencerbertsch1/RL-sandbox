@@ -215,9 +215,10 @@ class WildFireEnv(gym.Env):
         else:
             self.c += 1
 
-        step_time: float = round(time.time() - t, 5)
-        print(step_time)
-        self.step_times.append(step_time)
+        if self.VERBOSE: 
+            step_time: float = round(time.time() - t, 5)
+            print(step_time)
+            self.step_times.append(step_time)
 
 
         # calculate the reward
@@ -276,6 +277,10 @@ class WildFireEnv(gym.Env):
         self.TRAIN_MODE = True
         # Show the burned nodes 
         self.SHOW_BURNED_NODES = False
+        # adds helpful print statements 
+        self.VERBOSE = False
+        # controls the tradeoff between the short term rewards in the game and the final reward of the number of nodes saved
+        self.REWARD_BALANCER = 0.5
 
         if self.TRAIN_MODE is False: 
             background_image = cv2.imread('/Users/spencerbertsch/Desktop/dev/RL-sandbox/src/images/occidental_vet_hospital.png')
@@ -313,7 +318,8 @@ class WildFireEnv(gym.Env):
         self.old_burned_nodes = []
 
         # Ugly trick to bring the window in focus
-        self.win_focus()
+        if not self.TRAIN_MODE:
+            self.win_focus()
 
         # define other parameters for this run 
         self.c = 0
@@ -548,8 +554,12 @@ class WildFireEnv(gym.Env):
         cv2.putText(res, text=f'Score: {curr_score}', org=((pix-300), 100), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(0, 0, 0),thickness=2)
 
         # show the output image
-        cv2.imshow("Wildfire Environment", res)
-        key = cv2.waitKey(int(1000/self.SPEED))
+        if not self.TRAIN_MODE:
+            cv2.imshow("Wildfire Environment", res)
+            key = cv2.waitKey(int(1000/self.SPEED))
+        else:
+            # cv2.imshow("Wildfire Environment", res)
+            key = cv2.waitKey(1)
 
         # cv2.imshow("Wildfire Environment", np.uint8(board_states))
         # key = cv2.waitKey(int(1000/SPEED))
@@ -596,7 +606,7 @@ class WildFireEnv(gym.Env):
         Generate the reward after each step 
         """
         if self.done:
-            self.reward = float(self.curr_score)
+            self.reward = float(self.REWARD_BALANCER*self.reward + (1-self.REWARD_BALANCER)*self.curr_score)
         else:
 
             # if the plane has NO Phos Chek        
