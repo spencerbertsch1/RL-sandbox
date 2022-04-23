@@ -510,8 +510,7 @@ if __name__ == '__main__' :
 """
 ----------------- TODOs -----------------
 
-1. Keep the plane inside the environment 
-2. add new section of reward so that if you drop phos-chek down wind of fire it's a big reward
+1. add new section of reward so that if you drop phos-chek down wind of fire it's a big reward
  ++ if you drop phos chek away from the fire its a big penalty 
 
 """
