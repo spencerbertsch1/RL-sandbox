@@ -15,9 +15,9 @@ random.seed(10)
 
 # define globals 
 # Size of each cell in the board game
-CELL_SIZE = 15
+CELL_SIZE = 30
 # Number of cells along the width in the game
-BOARD_SIZE = 100
+BOARD_SIZE = 50
 # Change SPEED to make the game go faster
 SPEED = 15
 # Maximum speed at which the fire advances
@@ -55,29 +55,87 @@ class Plane:
         self.direction = direction
 
     def move(self):
+        """
+        Method used to move the agent around the environment 
+        """
         # update the previous state to the current state before we move the plane
         self.previous_state = self.state.copy()
 
         # Checks what its current direction is and moves accordingly
         if self.direction == 0:
+            # move east
             self.state[0] += 1
-        elif self.direction == 1:
-            self.state[1] += 1
-        elif self.direction == 2:
-            self.state[0] -= 1
-        elif self.direction == 3:
-            self.state[1] -= 1
-            
-        # TODO don't escape the environment... 
-        # we now have self.previous_state and we have self.state... So we can use this information to 
-        # find out if we're flying into a wall or corner and adjust accordingly
 
-        # if we are going to fly off of the environmnet... 
-        # test if we're in a corner
-            # if yes, then fly perpendicular to the other wall
-                # update self.direction accordingly 
-            # if no then randomly select a perpendicular direction and fly that way
-                # update self.direction accordingly 
+            # if we are falling off the East wall 
+            if self.state[0] == BOARD_SIZE:
+                # undo the move
+                self.state[0] -= 1
+                # are we in the north east corner?
+                if self.state[1] == 0:
+                    # move south
+                    self.direction = 1
+                    self.state[1] += 1
+                else:
+                    # move north instead
+                    self.direction = 3
+                    self.state[1] -= 1
+
+        elif self.direction == 1:
+            # move south
+            self.state[1] += 1
+
+            # if we are falling off the south wall 
+            if self.state[1] == BOARD_SIZE:
+                # undo the move
+                self.state[1] -= 1
+                # are we in the south east corner?
+                if self.state[0] == BOARD_SIZE-1:
+                    # if yes then we have to move west 
+                    self.direction = 2
+                    self.state[0] -= 1
+                else:
+                    # move east instead
+                    self.direction = 0
+                    self.state[0] += 1
+
+
+        elif self.direction == 2:
+            # move west 
+            self.state[0] -= 1
+
+            # if we are falling off the west wall 
+            if self.state[0] < 0:  
+                # undo the move
+                self.state[0] += 1
+                # are we in the south west corner?
+                if self.state[1] == BOARD_SIZE-1:
+                    # if yes then we have to move north 
+                    self.direction = 3
+                    self.state[1] -= 1
+                else:
+                    # move south instead
+                    self.direction = 1
+                    self.state[1] += 1
+        
+
+        elif self.direction == 3:
+            # move north
+            self.state[1] -= 1
+
+            # if we are falling off the north wall 
+            if self.state[1] < 0:  
+                # undo the move
+                self.state[1] += 1
+                # are we in the north west corner?
+                if self.state[0] == 0:
+                    # if yes then we have to move east 
+                    self.direction = 0
+                    self.state[0] += 1
+                else:
+                    # move west instead
+                    self.direction = 2
+                    self.state[0] -= 1
+
 
 class Node:
     """
