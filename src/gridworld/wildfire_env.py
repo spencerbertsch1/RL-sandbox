@@ -23,25 +23,92 @@ class Plane:
     """
     Plane (agent) for the wild fire RL environment 
     """
-    def __init__(self, state, previous_state, phos_chek_level: int, direction: int):
+    def __init__(self, state, previous_state, phos_chek_level: int, direction: int, BOARD_SIZE: int):
         self.state = state                          # [x, y] position of the plane in the grid  
         self.previous_state = previous_state        # [x, y] position of the plane's previous position in the grid  
         self.phos_chek_level = phos_chek_level      # int representing the amount of Phos Chek left in the plane
-        self.direction = direction
+        self.direction = direction                  # the direction that the plane is flying (N, E, S, W)  
+        self.BOARD_SIZE = BOARD_SIZE                # the size of the board (env) that the plane is flying over
 
     def move(self):
+        """
+        Method used to move the agent around the environment 
+        """
         # update the previous state to the current state before we move the plane
         self.previous_state = self.state.copy()
 
         # Checks what its current direction is and moves accordingly
         if self.direction == 0:
+            # move east
             self.state[0] += 1
+
+            # if we are falling off the East wall 
+            if self.state[0] == self.BOARD_SIZE:
+                # undo the move
+                self.state[0] -= 1
+                # are we in the north east corner?
+                if self.state[1] == 0:
+                    # move south
+                    self.direction = 1
+                    self.state[1] += 1
+                else:
+                    # move north instead
+                    self.direction = 3
+                    self.state[1] -= 1
+
         elif self.direction == 1:
+            # move south
             self.state[1] += 1
+
+            # if we are falling off the south wall 
+            if self.state[1] == self.BOARD_SIZE:
+                # undo the move
+                self.state[1] -= 1
+                # are we in the south east corner?
+                if self.state[0] == self.BOARD_SIZE-1:
+                    # if yes then we have to move west 
+                    self.direction = 2
+                    self.state[0] -= 1
+                else:
+                    # move east instead
+                    self.direction = 0
+                    self.state[0] += 1
+
         elif self.direction == 2:
+            # move west 
             self.state[0] -= 1
+
+            # if we are falling off the west wall 
+            if self.state[0] < 0:  
+                # undo the move
+                self.state[0] += 1
+                # are we in the south west corner?
+                if self.state[1] == self.BOARD_SIZE-1:
+                    # if yes then we have to move north 
+                    self.direction = 3
+                    self.state[1] -= 1
+                else:
+                    # move south instead
+                    self.direction = 1
+                    self.state[1] += 1
+        
         elif self.direction == 3:
+            # move north
             self.state[1] -= 1
+
+            # if we are falling off the north wall 
+            if self.state[1] < 0:  
+                # undo the move
+                self.state[1] += 1
+                # are we in the north west corner?
+                if self.state[0] == 0:
+                    # if yes then we have to move east 
+                    self.direction = 0
+                    self.state[0] += 1
+                else:
+                    # move west instead
+                    self.direction = 2
+                    self.state[0] -= 1
 
 
 class Node:
@@ -67,8 +134,8 @@ class WildFireEnv(gym.Env):
     in an attempt to put out the fire.
     """
 
-    BOARD_SIZE = 50
-    CELL_SIZE = 30
+    BOARD_SIZE = 25
+    CELL_SIZE = 60
     # ^^^ ensure the product of these two is 1,500!
 
     def __init__(self):
@@ -226,7 +293,7 @@ class WildFireEnv(gym.Env):
         
         # plane starts at the center of the board. 
         self.plane = Plane(state=self.plane_start_state, previous_state=self.plane_start_state, 
-                           phos_chek_level=self.MAX_PHOS_CHEK, direction=1)
+                           phos_chek_level=self.MAX_PHOS_CHEK, direction=1, BOARD_SIZE=self.BOARD_SIZE)
 
         # initislize fire start location
         self.fire_start_state = [(2, 7), (8, 3)]  # [(10, 10), (15, 55)]  # <-- good values for larger boards
