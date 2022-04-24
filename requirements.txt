@@ -40,3 +40,18 @@ plotly-express==0.4.1
 
 # 3) Dont use docker at all and just use a combination of pip + conda. This would be the hardest workload to move to a remote 
 # server for training, but it could be helpful if box2d is needed locally for any reason. 
+
+
+# If you want to run the lunar lander and other examples from ai.gym, you will need box2d-py, so use the following requirements.txt:
+
+# gym==0.19.0                    # <-- bug fix from 0.23.1
+# pygame==2.1.2
+# # jupyterlab==3.3.0            # <-- removed to save space on disk
+# matplotlib==3.5.1
+# opencv-python==4.5.5.62
+# box2d-py==2.3.8                # <-- removed because conda is needed for install (conda install swig --> pip install box2d-py)
+# box2d==2.3.2                   # <-- removed because conda is needed for install (conda install swig --> pip install box2d)
+# box2d-kengz==2.3.3             # <-- removed because conda is needed for install (conda install swig --> pip install box2d-kengz)
+# stable-baselines3==1.4.0       # <-- bug fix from 1.5.0
+# plotly==5.7.0
+# plotly-express==0.4.1
