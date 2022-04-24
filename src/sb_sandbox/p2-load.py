@@ -18,7 +18,6 @@ def main(MODEL: str):
     # load the model 
     model = PPO.load(models_path, env=env)
 
-
     episodes: int = 10
 
     for ep in range(episodes):
