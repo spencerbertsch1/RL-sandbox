@@ -1,15 +1,42 @@
-gym==0.22.0  # 0.23.1
+gym==0.19.0                    # <-- bug fix from 0.23.1
 pygame==2.1.2
-jupyterlab==3.3.0
+# jupyterlab==3.3.0            # <-- removed to save space on disk
 matplotlib==3.5.1
 opencv-python==4.5.5.62
-box2d-py==2.3.8
-box2d==2.3.2
-box2d-kengz==2.3.3
-stable-baselines3==1.5.0  # <-- bug fix, 1.4.0
+# box2d-py==2.3.8              # <-- removed because conda is needed for install (conda install swig --> pip install box2d-py)
+# box2d==2.3.2                 # <-- removed because conda is needed for install (conda install swig --> pip install box2d)
+# box2d-kengz==2.3.3           # <-- removed because conda is needed for install (conda install swig --> pip install box2d-kengz)
+stable-baselines3==1.4.0       # <-- bug fix from 1.5.0
 plotly==5.7.0
 plotly-express==0.4.1
 
+
 # might need to run these commands as well to get some other packages we need 
+# $ conda install swig  # https://stackoverflow.com/questions/44198228/install-pybox2d-for-python-3-6-with-conda-4-3-21
 # $ pip install 'stable-baselines3[extra]' 
 # $ pip install 'gym[all]'
+
+# -------------------- TLDR - April 24, 2022 --------------------
+
+# This requirements.txt file includes a few commented packages that are needed to make some of the 
+# ai gym environments run. Namely, box2d-py, box2d, or box2d-kengz is used to help render some of the 
+# examples such as cartpole.py and lunar_lander.py, seen here as p1... and p2... under the sb_sandbox directory. 
+
+# The problem with these packages is that you need to $ conda install swig before you can $ pip install these libraries. 
+# Thats okay when using a conda env, but when using a docker container that doesnt use miniconda, we need to 
+# leave these packages out. 
+
+# This means that the ai gym examples wont run, but our environments will build and run just fine because they use
+# opencv-python to render. Furthermore, finance environments dont need to render anything at all, so they shouldnt
+# need box2d-py or packages that rely on box2d either. 
+
+# This leaves the user with a few options: 
+
+# 1) Use a docker container that has conda installed inside it, then conda install swig, then install the full requirements.txt
+# file that includes box2d-py etc. That docker container will be able to run scripts such as cartpole.py no problem. 
+
+# 2) Use a docker container that installs everything found above WITHOUT box2d-py. That container will be able to run  
+# wildfire training workloads, finance training workloads, etc., but not cartpole.py or any ai.gym envs. 
+
+# 3) Dont use docker at all and just use a combination of pip + conda. This would be the hardest workload to move to a remote 
+# server for training, but it could be helpful if box2d is needed locally for any reason. 
