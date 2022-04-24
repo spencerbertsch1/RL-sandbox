@@ -9,6 +9,7 @@ opencv-python==4.5.5.62
 stable-baselines3==1.4.0       # <-- bug fix from 1.5.0
 plotly==5.7.0
 plotly-express==0.4.1
+tensorboard==2.8.0
 
 
 # might need to run these commands as well to get some other packages we need 
@@ -55,3 +56,4 @@ plotly-express==0.4.1
 # stable-baselines3==1.4.0       # <-- bug fix from 1.5.0
 # plotly==5.7.0
 # plotly-express==0.4.1
+# tensorboard==2.8.0
