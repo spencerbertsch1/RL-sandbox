@@ -15,13 +15,13 @@ random.seed(10)
 
 # define globals 
 # Size of each cell in the board game
-CELL_SIZE = 30
+CELL_SIZE = 300
 # Number of cells along the width in the game
-BOARD_SIZE = 50
+BOARD_SIZE = 5
 # Change SPEED to make the game go faster
-SPEED = 15
+SPEED = 3
 # Maximum speed at which the fire advances
-FIRE_SPEED = 15  # <-- inverse 
+FIRE_SPEED = 30  # <-- inverse 
 # the amount of time in actual minutes that go by before the fire advances one step (this needs to be calibrated realistically)
 FIRE_TIMESTEP = int(FIRE_SPEED*3)  # minutes
 # define max amount of Phos Chek that a plane can carry (will depend on type of aircraft)
@@ -221,8 +221,9 @@ def get_next_burning(currently_burning_nodes: list, first_ignition: bool) -> lis
             if (neighbor_node.fuel != 0) and (neighbor_node.burning == False):
                 
                 if first_ignition:
-                    next_burning_nodes.append(neighbor_node)
-                    neighbor_node.burning = True
+                    if neighbor_node.phos_chek is False: 
+                        next_burning_nodes.append(neighbor_node)
+                        neighbor_node.burning = True
                 else:
                     # lets first handle nodes that are not in the wind's direction
                     if neighbor_node.state != downwind_state:
@@ -390,13 +391,14 @@ if __name__ == '__main__' :
     plane = Plane(state=plane_start_state, previous_state=plane_start_state, phos_chek_level=MAX_PHOS_CHEK, direction=1)
 
     # initislize fire start location
-    fire_start_state = [(2, 7), (8, 3)]  # [(10, 10), (15, 55)]  # <-- good values for larger boards
+    fire_start_state = [(0, 0)]  # [(10, 10), (15, 55)]  # <-- good values for larger boards
+    # [(2, 7), (8, 3)]  <-- good for small maps 
     # node_map[fire_start_state[0]][fire_start_state[1]].burning = True
-    burning_nodes: list = [node_map[fire_start_state[0][0]][fire_start_state[0][1]], 
-                           node_map[fire_start_state[1][0]][fire_start_state[1][1]]]
-    # burning_nodes: list = [node_map[fire_start_state[0][0]][fire_start_state[0][1]]]
+    # burning_nodes: list = [node_map[fire_start_state[0][0]][fire_start_state[0][1]], 
+    #                        node_map[fire_start_state[1][0]][fire_start_state[1][1]]]
+    burning_nodes: list = [node_map[fire_start_state[0][0]][fire_start_state[0][1]]]
 
-    airport = Airport(state=[int((BOARD_SIZE - 3)), int((BOARD_SIZE - 3))])
+    airport = Airport(state=[int((BOARD_SIZE - 1)), int((BOARD_SIZE - 1))])
 
     # for i in range(board_start_state.shape[0]):
     #     for j in range(board_start_state.shape[1]): 
