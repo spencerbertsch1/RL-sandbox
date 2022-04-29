@@ -134,9 +134,8 @@ class WildFireEnv(gym.Env):
     in an attempt to put out the fire.
     """
 
-    BOARD_SIZE = 25
-    CELL_SIZE = 60
-    # ^^^ ensure the product of these two is 1,500!
+    BOARD_SIZE = 5
+    CELL_SIZE = int(1500/BOARD_SIZE)
 
     def __init__(self):
         super(WildFireEnv, self).__init__()
@@ -300,13 +299,16 @@ class WildFireEnv(gym.Env):
         self.plane = Plane(state=self.plane_start_state, previous_state=self.plane_start_state, 
                            phos_chek_level=self.MAX_PHOS_CHEK, direction=1, BOARD_SIZE=self.BOARD_SIZE)
 
-        # initislize fire start location
-        self.fire_start_state = [(2, 7), (8, 3)]  # [(10, 10), (15, 55)]  # <-- good values for larger boards
-        # node_map[fire_start_state[0]][fire_start_state[1]].burning = True
-        self.burning_nodes: list = [self.node_map[self.fire_start_state[0][0]][self.fire_start_state[0][1]], 
-                                    self.node_map[self.fire_start_state[1][0]][self.fire_start_state[1][1]]]
+        # initislize fire start location - use the below code to add more starting fires
+        # self.fire_start_state = [(0,0)]  # [(10, 10), (15, 55)]  # <-- good values for larger boards
+        # self.burning_nodes: list = [self.node_map[self.fire_start_state[0][0]][self.fire_start_state[0][1]], 
+        #                             self.node_map[self.fire_start_state[1][0]][self.fire_start_state[1][1]]]
+        # self.burning_nodes: list = [self.node_map[self.fire_start_state[0][0]][self.fire_start_state[0][1]]]
 
-        self.airport = Airport(state=[int((self.BOARD_SIZE - 3)), int((self.BOARD_SIZE - 3))])
+        self.fire_start_state = [(0, 0)]  
+        self.burning_nodes: list = [self.node_map[self.fire_start_state[0][0]][self.fire_start_state[0][1]]]
+
+        self.airport = Airport(state=[int((self.BOARD_SIZE - 1)), int((self.BOARD_SIZE - 1))])
 
         # define blackened nodes (already burned)
         self.burned_nodes = []
