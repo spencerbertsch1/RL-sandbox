@@ -14,10 +14,10 @@ import pickle
 random.seed(10)
 
 # define globals 
-# Size of each cell in the board game
-CELL_SIZE = 300
 # Number of cells along the width in the game
 BOARD_SIZE = 5
+# Size of each cell in the board game
+CELL_SIZE = int(1500/BOARD_SIZE)
 # Change SPEED to make the game go faster
 SPEED = 3
 # Maximum speed at which the fire advances
