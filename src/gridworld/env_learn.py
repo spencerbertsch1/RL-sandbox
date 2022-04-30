@@ -19,7 +19,7 @@ env.reset()
 
 model = PPO('MlpPolicy', env, verbose=1, tensorboard_log=logdir)
 
-TIMESTEPS = 2  # <-- should be at least 10_000
+TIMESTEPS = 5  # <-- should be at least 1000
 iters = 0
 while iters < 2:
 	iters += 1
