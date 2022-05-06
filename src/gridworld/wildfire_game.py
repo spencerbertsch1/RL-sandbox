@@ -508,11 +508,3 @@ if __name__ == '__main__' :
     # USE THIS FOR AD-HOC PERFORMANCE TESTING
     # with open('/Users/spencerbertsch/Desktop/dev/RL-sandbox/src/gridworld/metadata/burned_nodes.pkl', 'wb') as f:
     #     pickle.dump(step_times, f)
-
-"""
------------------ TODOs -----------------
-
-1. add new section of reward so that if you drop phos-chek down wind of fire it's a big reward
- ++ if you drop phos chek away from the fire its a big penalty 
-
-"""
