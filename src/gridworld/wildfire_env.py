@@ -148,10 +148,10 @@ class WildFireEnv(gym.Env):
     in an attempt to put out the fire.
     """
 
-    BOARD_SIZE = 5
+    BOARD_SIZE = 4
     CELL_SIZE = int(1500/BOARD_SIZE)
 
-    def __init__(self):
+    def __init__(self, TRAIN_MODE: bool, SHOW_IMAGE_BACKGROUND: bool, SHOW_BURNED_NODES: bool):
         super(WildFireEnv, self).__init__()
         # Define action and observation space
         # They must be gym.spaces objects
@@ -163,6 +163,11 @@ class WildFireEnv(gym.Env):
         high =  np.ones(shape=(self.BOARD_SIZE, self.BOARD_SIZE, 1), dtype=np.uint8)*255
         # self.observation_space = spaces.Box(low, high, dtype=np.int64)
         self.observation_space = spaces.Box(low=low, high=high, dtype=np.uint8)
+
+        # parameters used to render the map using CV2
+        self.TRAIN_MODE = TRAIN_MODE
+        self.SHOW_IMAGE_BACKGROUND = SHOW_IMAGE_BACKGROUND
+        self.SHOW_BURNED_NODES = SHOW_BURNED_NODES
 
     def step(self, action):
         """
@@ -230,7 +235,7 @@ class WildFireEnv(gym.Env):
 
         if self.VERBOSE: 
             step_time: float = round(time.time() - t, 5)
-            print(step_time)
+            print(f'TIME TAKEN FOR THIS STEP: {round(step_time, 4) * 1000} MS')
             self.step_times.append(step_time)
 
 
@@ -288,12 +293,15 @@ class WildFireEnv(gym.Env):
         self.WIND_SPEED = 5
         # set to True if the reward function should calculate distance to fire based on upwind node
         self.USE_UPWIND_NODE_FOR_REWARD = False
-        # train mode - true if we want the simulations to run fast and we don't care about aesthetics
-        self.TRAIN_MODE = False
-        # True if you want to see the image background (take a little while to render at the start of the build)
-        self.SHOW_IMAGE_BACKGROUND = False
-        # Show the burned nodes 
-        self.SHOW_BURNED_NODES = False
+
+        # THESE ARE NOW DEFINES IN THE CONSTRUCTOR!!! PASS THEM UPON INSTANTIATION OF THE WILDFIRE_ENV OBJECT
+        # # train mode - true if we want the simulations to run fast and we don't care about aesthetics
+        # self.TRAIN_MODE = True
+        # # True if you want to see the image background (take a little while to render at the start of the build)
+        # self.SHOW_IMAGE_BACKGROUND = False
+        # # Show the burned nodes 
+        # self.SHOW_BURNED_NODES = False
+
         # adds helpful print statements 
         self.VERBOSE = False
         # controls the tradeoff between the short term rewards in the game and the final reward of the number of nodes saved
@@ -721,7 +729,8 @@ class WildFireEnv(gym.Env):
 
 # some test code
 if __name__ == "__main__":
-    env = WildFireEnv()
+
+    env = WildFireEnv(TRAIN_MODE=True, SHOW_IMAGE_BACKGROUND=False, SHOW_BURNED_NODES=False)
     episodes = 2
 
     for episode in range(episodes):
