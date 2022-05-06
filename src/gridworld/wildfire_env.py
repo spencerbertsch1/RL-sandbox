@@ -616,9 +616,7 @@ class WildFireEnv(gym.Env):
         for phos_chek_state in phos_chek_states:
             self.observation[phos_chek_state[0], phos_chek_state[1]] = 3
         
-        self.observation[self.plane.state[0], self.plane.state[1]] = 4  # <-- causing problems 
-        # FIXME ^^^ We need to implement logic so that the plane CANNOT fly off the board. If it's pushing 
-        # against a wall then is stays in the same place 
+        self.observation[self.plane.state[0], self.plane.state[1]] = 4  
 
         self.observation[self.airport.state[0], self.airport.state[1]] = 5
 
@@ -653,21 +651,23 @@ class WildFireEnv(gym.Env):
                 # DROPPING PHOS CHEK
                 if self.phos_check_dump: 
                     # we don't need to worry that the plane is dumping with no phos chek because that's the previous test-case
-                    if (self.plane.state not in [node.state for node in self.burning_nodes]) & \
-                       (self.plane.state not in [node.state for node in self.burned_nodes]):
+                    if (self.plane.previous_state not in [node.state for node in self.burning_nodes]) & \
+                       (self.plane.previous_state not in [node.state for node in self.burned_nodes]):
                        
                         # get the neighboring nodes to the plane's current location
-                        x: int = int(self.plane.state[0]/self.CELL_SIZE)
-                        y: int = int((self.plane.state[1]/self.CELL_SIZE))
+                        x: int = int(self.plane.previous_state[0])
+                        y: int = int((self.plane.previous_state[1]))
                         curr_plane_node: Node = self.node_map[x][y]
+
+                        # TODO DEBUG THIS
                         
                         # if we want to check whether or not the up wind nodes are burning
                         if self.USE_UPWIND_NODE_FOR_REWARD: 
 
                             # find the up wind state first 
                             upwind_state = self.get_up_wind_state(curr_plane_node.state)
-                            x: int = int(upwind_state[0]/self.CELL_SIZE)
-                            y: int = int((upwind_state[1]/self.CELL_SIZE))
+                            x: int = int(upwind_state[0])
+                            y: int = int((upwind_state[1]))
                             # use the up wind node 
                             curr_plane_node: Node = self.node_map[x][y]
 
