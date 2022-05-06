@@ -125,6 +125,11 @@ class Node:
         self.neighbors = neighbors      # 2-4 nodes that represent the adjacent nodes 
         self.burning = burning          # bool representing whether or not the cell is burning
 
+def lists_overlap(a, b):
+    """
+    small utility function that returns True if the input lists share any elements
+    """
+    return bool(set(a) & set(b))
 
 class WildFireEnv(gym.Env):
     """
@@ -273,13 +278,14 @@ class WildFireEnv(gym.Env):
         self.wind_direction_lookup = {'north': 1, 'northeast': 2, 'east': 3, 'southeast': 4, 'south': 5, 'southwest': 6, 'west': 7, 'northwest': 8}
         self.WIND_SPEED = 5
         # train mode - true if we want the simulations to run fast and we don't care about aesthetics
-        self.TRAIN_MODE = True
+        self.TRAIN_MODE = False
         # Show the burned nodes 
         self.SHOW_BURNED_NODES = False
         # adds helpful print statements 
         self.VERBOSE = False
         # controls the tradeoff between the short term rewards in the game and the final reward of the number of nodes saved
         self.REWARD_BALANCER = 0.5
+        self.USE_UPWIND_NODE_FOR_REWARD = True
 
         if self.TRAIN_MODE is False: 
             background_image = cv2.imread('/Users/spencerbertsch/Desktop/dev/RL-sandbox/src/images/occidental_vet_hospital.png')
@@ -378,6 +384,20 @@ class WildFireEnv(gym.Env):
             down_wind_state = [state[0]+1, state[1]+1]
 
         return down_wind_state
+
+
+    def get_up_wind_state(self, state: list) -> list:
+        """
+        :param: state - list of two ints representing [x, y] of the node in question - [10, 10] for example
+        Note that the origin is in the UPPER LEFT of the grid 
+        """
+        if self.WIND_DIRECTION == 1: 
+            # fire burns north
+            up_wind_state = [state[0]+1, state[1]]
+        elif self.WIND_DIRECTION == 4:
+            up_wind_state = [state[0]-1, state[1]-1]
+
+        return up_wind_state
 
 
     def get_phos_chek_nodes(self, plane_x: int, plane_y: int) -> list:  
@@ -602,7 +622,6 @@ class WildFireEnv(gym.Env):
 
         return self.observation
 
-
     def calculate_reward(self):
         """
         Generate the reward after each step 
@@ -624,23 +643,62 @@ class WildFireEnv(gym.Env):
                     self.reward = self.reward - 1
 
             else:
-                # here we want to reward the plane if it's flying towards ANY part of the fire. 
-                # TODO vectorize this to make it faster in the future!!! 
-                
-                flying_towards_any_burning_node: bool = False
-                burning_states = [x.state for x in self.burning_nodes] 
-                for burning_state in burning_states:
-                    prev_dist_to_buring_state = dist(self.plane.previous_state, burning_state)
-                    curr_dist_to_buring_state = dist(self.plane.state, burning_state)
+                # we now want to ensure that the plan is either dropping phos chek in the right place, or at least 
+                # flying towards the fire if it has a non-zero level of phos chek
+                # DROPPING PHOS CHEK
+                if self.phos_check_dump: 
+                    # we don't need to worry that the plane is dumping with no phos chek because that's the previous test-case
+                    if (self.plane.state not in [node.state for node in self.burning_nodes]) & \
+                       (self.plane.state not in [node.state for node in self.burned_nodes]):
+                       
+                        # get the neighboring nodes to the plane's current location
+                        x: int = int(self.Plane.state[0]/self.CELL_SIZE)
+                        y: int = int((self.Plane.state[1]/self.CELL_SIZE))
+                        curr_plane_node: Node = self.node_map[x][y]
+                        
+                        # if we want to check whether or not the up wind nodes are burning
+                        if self.USE_UPWIND_NODE_FOR_REWARD: 
 
-                    # we want to reward the agent if it flies towards the fire here
-                    if curr_dist_to_buring_state < prev_dist_to_buring_state:
-                        self.reward = self.reward + 1
-                        flying_towards_any_burning_node = True
-                        break
-                
-                # here we penalize the agent if it's flying in a direction that's away from ALL the burning nodes
-                if not flying_towards_any_burning_node:
-                    self.reward = self.reward - 1
+                            # find the up wind state first 
+                            upwind_state = self.get_up_wind_state(curr_plane_node.state)
+                            x: int = int(upwind_state[0]/self.CELL_SIZE)
+                            y: int = int((upwind_state[1]/self.CELL_SIZE))
+                            # use the up wind node 
+                            curr_plane_node: Node = self.node_map[x][y]
+
+                        plane_neighbor_nodes: list = curr_plane_node.neighbors
+
+                        # if any of the plane's current neighbord are burning, then we give a large reward 
+                        if lists_overlap([node.state for node in plane_neighbor_nodes], \
+                                         [node.state for node in self.burning_nodes]):
+                            # plane is dropping phos chek on a forest node that borders a burning node - Good! 
+                            self.reward = self.reward + 10
+                        else:
+                            # plane is dropping phos chek on a forest node that DOES NOT border a burning node - Bad! 
+                            self.reward = self.reward - 5
+                    
+                    else:
+                        # if we dump the phos chek on burning or burned nodes, that earns a big penalty! 
+                        self.reward = self.reward - 20
+
+                # NOT DROPPING PHOS CHEK
+                else:
+                    # here we want to reward the plane if it's flying towards ANY part of the fire. 
+                    # TODO vectorize this to make it faster in the future!!! 
+                    flying_towards_any_burning_node: bool = False
+                    burning_states = [x.state for x in self.burning_nodes] 
+                    for burning_state in burning_states:
+                        prev_dist_to_buring_state = dist(self.plane.previous_state, burning_state)
+                        curr_dist_to_buring_state = dist(self.plane.state, burning_state)
+
+                        # we want to reward the agent if it flies towards the fire here
+                        if curr_dist_to_buring_state < prev_dist_to_buring_state:
+                            self.reward = self.reward + 1
+                            flying_towards_any_burning_node = True
+                            break
+                    
+                    # here we penalize the agent if it's flying in a direction that's away from ALL the burning nodes
+                    if not flying_towards_any_burning_node:
+                        self.reward = self.reward - 1
 
         return self.reward
