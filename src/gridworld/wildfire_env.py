@@ -129,11 +129,16 @@ def lists_overlap(a, b):
     """
     small utility function that returns True if the input lists share any elements
     """
-    overlap: set = set(a) & set(b)
-    if len(overlap) == 0: 
-        return False
-    else:
+    # convert the list contents into tuples
+    a_tuples = set(tuple(i) for i in a)
+    b_tuples = set(tuple(i) for i in b) 
+    overlap: set = a_tuples & b_tuples
+    if len(overlap) != 0: 
+        # there is overlap
         return True
+    else:
+        # there is no overlap 
+        return False
 
 class WildFireEnv(gym.Env):
     """
@@ -270,7 +275,7 @@ class WildFireEnv(gym.Env):
         # self.BOARD_SIZE = 100
 
         # Change SPEED to make the game go faster
-        self.SPEED = 15
+        self.SPEED = 300
         # Maximum speed at which the fire advances
         self.FIRE_SPEED = 15  # <-- inverse 
         # the amount of time in actual minutes that go by before the fire advances one step (this needs to be calibrated realistically)
@@ -282,7 +287,7 @@ class WildFireEnv(gym.Env):
         self.wind_direction_lookup = {'north': 1, 'northeast': 2, 'east': 3, 'southeast': 4, 'south': 5, 'southwest': 6, 'west': 7, 'northwest': 8}
         self.WIND_SPEED = 5
         # set to True if the reward function should calculate distance to fire based on upwind node
-        self.USE_UPWIND_NODE_FOR_REWARD = True
+        self.USE_UPWIND_NODE_FOR_REWARD = False
         # train mode - true if we want the simulations to run fast and we don't care about aesthetics
         self.TRAIN_MODE = False
         # Show the burned nodes 
@@ -620,9 +625,6 @@ class WildFireEnv(gym.Env):
 
         self.observation[self.airport.state[0], self.airport.state[1]] = 5
 
-        # test - remove later
-        # self.observation = np.zeros(shape=(self.BOARD_SIZE, self.BOARD_SIZE, 1), dtype=np.uint8)
-
         return self.observation
 
     def calculate_reward(self):
@@ -658,8 +660,6 @@ class WildFireEnv(gym.Env):
                         x: int = int(self.plane.previous_state[0])
                         y: int = int((self.plane.previous_state[1]))
                         curr_plane_node: Node = self.node_map[x][y]
-
-                        # TODO DEBUG THIS
                         
                         # if we want to check whether or not the up wind nodes are burning
                         if self.USE_UPWIND_NODE_FOR_REWARD: 
@@ -676,9 +676,7 @@ class WildFireEnv(gym.Env):
                         # if any of the plane's current neighbord are burning, then we give a large reward 
                         l1 = [node.state for node in plane_neighbor_nodes]
                         l2 = [node.state for node in self.burning_nodes]
-                        print(l1, l2)
-                        if lists_overlap([node.state for node in plane_neighbor_nodes], \
-                                         [node.state for node in self.burning_nodes]):
+                        if lists_overlap(l1, l2):
                             # plane is dropping phos chek on a forest node that borders a burning node - Good! 
                             self.reward = self.reward + 10
                         else:
