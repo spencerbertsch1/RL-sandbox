@@ -129,7 +129,11 @@ def lists_overlap(a, b):
     """
     small utility function that returns True if the input lists share any elements
     """
-    return bool(set(a) & set(b))
+    overlap: set = set(a) & set(b)
+    if len(overlap) == 0: 
+        return False
+    else:
+        return True
 
 class WildFireEnv(gym.Env):
     """
@@ -277,6 +281,8 @@ class WildFireEnv(gym.Env):
         self.WIND_DIRECTION = 4
         self.wind_direction_lookup = {'north': 1, 'northeast': 2, 'east': 3, 'southeast': 4, 'south': 5, 'southwest': 6, 'west': 7, 'northwest': 8}
         self.WIND_SPEED = 5
+        # set to True if the reward function should calculate distance to fire based on upwind node
+        self.USE_UPWIND_NODE_FOR_REWARD = True
         # train mode - true if we want the simulations to run fast and we don't care about aesthetics
         self.TRAIN_MODE = False
         # Show the burned nodes 
@@ -285,7 +291,6 @@ class WildFireEnv(gym.Env):
         self.VERBOSE = False
         # controls the tradeoff between the short term rewards in the game and the final reward of the number of nodes saved
         self.REWARD_BALANCER = 0.5
-        self.USE_UPWIND_NODE_FOR_REWARD = True
 
         if self.TRAIN_MODE is False: 
             background_image = cv2.imread('/Users/spencerbertsch/Desktop/dev/RL-sandbox/src/images/occidental_vet_hospital.png')
@@ -652,8 +657,8 @@ class WildFireEnv(gym.Env):
                        (self.plane.state not in [node.state for node in self.burned_nodes]):
                        
                         # get the neighboring nodes to the plane's current location
-                        x: int = int(self.Plane.state[0]/self.CELL_SIZE)
-                        y: int = int((self.Plane.state[1]/self.CELL_SIZE))
+                        x: int = int(self.plane.state[0]/self.CELL_SIZE)
+                        y: int = int((self.plane.state[1]/self.CELL_SIZE))
                         curr_plane_node: Node = self.node_map[x][y]
                         
                         # if we want to check whether or not the up wind nodes are burning
@@ -669,6 +674,9 @@ class WildFireEnv(gym.Env):
                         plane_neighbor_nodes: list = curr_plane_node.neighbors
 
                         # if any of the plane's current neighbord are burning, then we give a large reward 
+                        l1 = [node.state for node in plane_neighbor_nodes]
+                        l2 = [node.state for node in self.burning_nodes]
+                        print(l1, l2)
                         if lists_overlap([node.state for node in plane_neighbor_nodes], \
                                          [node.state for node in self.burning_nodes]):
                             # plane is dropping phos chek on a forest node that borders a burning node - Good! 
@@ -702,3 +710,19 @@ class WildFireEnv(gym.Env):
                         self.reward = self.reward - 1
 
         return self.reward
+
+
+# some test code
+if __name__ == "__main__":
+    env = WildFireEnv()
+    episodes = 2
+
+    for episode in range(episodes):
+        done = False
+        obs = env.reset()
+
+        while done is False:#not done:
+            random_action = env.action_space.sample()
+            print("action",random_action)
+            obs, reward, done, info = env.step(random_action)
+            print('reward',reward, 'done', done)
