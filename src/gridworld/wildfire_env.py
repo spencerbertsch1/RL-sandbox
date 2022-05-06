@@ -222,7 +222,8 @@ class WildFireEnv(gym.Env):
             if len(self.burning_nodes) == 0:
                 # the game is over, so we set done to True
                 self.done = True
-                self.print_results()
+                if self.VERBOSE:
+                    self.print_results()
             else:
                 self.burning_nodes = self.get_next_burning(self.burning_nodes, first_ignition=self.first_ignition)
                 self.first_ignition=False
