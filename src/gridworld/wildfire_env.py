@@ -275,9 +275,9 @@ class WildFireEnv(gym.Env):
         # self.BOARD_SIZE = 100
 
         # Change SPEED to make the game go faster
-        self.SPEED = 300
+        self.SPEED = 1 # <-- lower is faster
         # Maximum speed at which the fire advances
-        self.FIRE_SPEED = 15  # <-- inverse 
+        self.FIRE_SPEED = 15  # <-- lower is faster
         # the amount of time in actual minutes that go by before the fire advances one step (this needs to be calibrated realistically)
         self.FIRE_TIMESTEP = int(self.FIRE_SPEED*3)  # minutes
         # define max amount of Phos Chek that a plane can carry (will depend on type of aircraft)
@@ -290,6 +290,8 @@ class WildFireEnv(gym.Env):
         self.USE_UPWIND_NODE_FOR_REWARD = False
         # train mode - true if we want the simulations to run fast and we don't care about aesthetics
         self.TRAIN_MODE = False
+        # True if you want to see the image background (take a little while to render at the start of the build)
+        self.SHOW_IMAGE_BACKGROUND = False
         # Show the burned nodes 
         self.SHOW_BURNED_NODES = False
         # adds helpful print statements 
@@ -297,7 +299,7 @@ class WildFireEnv(gym.Env):
         # controls the tradeoff between the short term rewards in the game and the final reward of the number of nodes saved
         self.REWARD_BALANCER = 0.5
 
-        if self.TRAIN_MODE is False: 
+        if self.SHOW_IMAGE_BACKGROUND is True: 
             background_image = cv2.imread('/Users/spencerbertsch/Desktop/dev/RL-sandbox/src/images/occidental_vet_hospital.png')
             self.layer1 = np.zeros([background_image.shape[0], background_image.shape[1], 4])
 
@@ -305,6 +307,10 @@ class WildFireEnv(gym.Env):
                 for j in range(self.layer1.shape[1]): 
                     # TODO we will eventually set up the RGB of the board depending on the fuel in each node
                     self.layer1[i][j] = np.uint8(np.append(background_image[i][j], 255))
+
+        else:
+            # we could make this configurable later on - for now this will only work with 1500px by 1500px images 
+            self.layer1 = np.zeros([1500, 1500, 4])
 
         # list of lists representing the board of all nodes 
         self.node_map: list = self.generate_initial_nodes()
@@ -588,7 +594,7 @@ class WildFireEnv(gym.Env):
         # show the output image
         if not self.TRAIN_MODE:
             cv2.imshow("Wildfire Environment", res)
-            key = cv2.waitKey(int(1000/self.SPEED))
+            key = cv2.waitKey(int(self.SPEED))
         else:
             # cv2.imshow("Wildfire Environment", res)
             key = cv2.waitKey(1)
