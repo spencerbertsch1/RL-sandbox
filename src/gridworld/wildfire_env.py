@@ -632,7 +632,10 @@ class WildFireEnv(gym.Env):
         Generate the reward after each step 
         """
         if self.done:
-            self.reward = float(self.REWARD_BALANCER*self.reward + (1-self.REWARD_BALANCER)*self.curr_score)
+            # get percentage of board burned
+            percent_unburned = (self.curr_score / (self.BOARD_SIZE*self.BOARD_SIZE)) * 100
+            # (reward_balancer * current_reward) + ((1 - reward_balancer) * percent_unburned_trees)
+            self.reward = float(self.REWARD_BALANCER*self.reward + (1-self.REWARD_BALANCER) * percent_unburned)
         else:
 
             # if the plane has NO Phos Chek        
@@ -678,14 +681,14 @@ class WildFireEnv(gym.Env):
                         l2 = [node.state for node in self.burning_nodes]
                         if lists_overlap(l1, l2):
                             # plane is dropping phos chek on a forest node that borders a burning node - Good! 
-                            self.reward = self.reward + 10
+                            self.reward = self.reward + 5
                         else:
                             # plane is dropping phos chek on a forest node that DOES NOT border a burning node - Bad! 
-                            self.reward = self.reward - 5
+                            self.reward = self.reward - 3
                     
                     else:
                         # if we dump the phos chek on burning or burned nodes, that earns a big penalty! 
-                        self.reward = self.reward - 20
+                        self.reward = self.reward - 10
 
                 # NOT DROPPING PHOS CHEK
                 else:
