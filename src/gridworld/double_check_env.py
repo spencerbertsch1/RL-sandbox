@@ -3,7 +3,7 @@ from wildfire_env import WildFireEnv
 from test_env import TestEnv
 from portfolio_opt import PortfolioOptEnv
 
-env = WildFireEnv()
+env = WildFireEnv(TRAIN_MODE=False, SHOW_IMAGE_BACKGROUND=False, SHOW_BURNED_NODES=False)
 episodes = 2
 
 for episode in range(episodes):
