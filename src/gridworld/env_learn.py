@@ -4,6 +4,7 @@ import time
 from wildfire_env import WildFireEnv
 from test_env import TestEnv
 from portfolio_opt import PortfolioOptEnv
+import time
 
 models_dir = f"models/{int(time.time())}/"
 logdir = f"logs/{int(time.time())}/"
@@ -19,8 +20,11 @@ env.reset()
 
 model = PPO('MlpPolicy', env, verbose=1, tensorboard_log=logdir)
 
-TIMESTEPS = 5000  # <-- should be at least 1000
-for i in range(100):
+TIMESTEPS = 1000  # <-- should be at least 1000
+for i in range(250):
+	tic = time.time()
 	# train the model TIMESTEPS number of times before saving a copy of the new model to disk
-	model.learn(total_timesteps=TIMESTEPS, reset_num_timesteps=False, tb_log_name=f"PPO")
+	model.learn(total_timesteps=10, reset_num_timesteps=False, tb_log_name=f"PPO")
 	model.save(f"{models_dir}/{TIMESTEPS*i}")
+	toc = time.time()
+	print(f'Model Training Iteration finished in {round(toc - tic, 3)} seconds')
