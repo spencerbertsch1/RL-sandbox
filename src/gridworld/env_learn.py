@@ -28,3 +28,7 @@ for i in range(250):
 	model.save(f"{models_dir}/{TIMESTEPS*i}")
 	toc = time.time()
 	print(f'Model Training Iteration finished in {round(toc - tic, 3)} seconds')
+
+"""
+TODO add command line args so we don't need multiple scripts! 
+"""
