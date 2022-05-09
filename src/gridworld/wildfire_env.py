@@ -281,7 +281,7 @@ class WildFireEnv(gym.Env):
         # self.BOARD_SIZE = 100
 
         # Change SPEED to make the game go faster
-        self.SPEED = 1 # <-- lower is faster
+        self.SPEED = 25 # <-- lower is faster
         # Maximum speed at which the fire advances
         self.FIRE_SPEED = 15  # <-- lower is faster
         # the amount of time in actual minutes that go by before the fire advances one step (this needs to be calibrated realistically)
@@ -457,8 +457,9 @@ class WildFireEnv(gym.Env):
                 if (neighbor_node.fuel != 0) and (neighbor_node.burning == False):
                     
                     if first_ignition:
-                        next_burning_nodes.append(neighbor_node)
-                        neighbor_node.burning = True
+                        if neighbor_node.phos_chek is False: 
+                            next_burning_nodes.append(neighbor_node)
+                            neighbor_node.burning = True
                     else:
                         # lets first handle nodes that are not in the wind's direction
                         if neighbor_node.state != downwind_state:
@@ -554,22 +555,22 @@ class WildFireEnv(gym.Env):
             for burned_node in self.burned_nodes:
                 x = burned_node.state[0] * self.CELL_SIZE
                 y = burned_node.state[1] * self.CELL_SIZE
-                layer2[y:y + self.CELL_SIZE, x:x + self.CELL_SIZE] = [173, 220, 255, 255]
+                layer2[y:y + self.CELL_SIZE, x:x + self.CELL_SIZE] = [173, 220, 255, 200]
         # TODO ^ Speed this up in the future 
 
         # create the layer 2 cache so we don't need to iterate through thousands of burned nodes for the render
         layer2_cache = layer2.copy()
 
-        for burning_node in self.burning_nodes:
-            x = burning_node.state[0] * self.CELL_SIZE
-            y = burning_node.state[1] * self.CELL_SIZE
-            layer2[y:y + self.CELL_SIZE, x:x + self.CELL_SIZE] = [0, 0, 255, 255]
-
         # display the fire retardant nodes
         for phos_chek_node in self.phos_chek_nodes:
             x = phos_chek_node.state[0] * self.CELL_SIZE
             y = phos_chek_node.state[1] * self.CELL_SIZE
-            layer2[y:y + self.CELL_SIZE, x:x + self.CELL_SIZE] = [255, 10, 10, 255]
+            layer2[y:y + self.CELL_SIZE, x:x + self.CELL_SIZE] = [255, 10, 10, 1]
+
+        for burning_node in self.burning_nodes:
+            x = burning_node.state[0] * self.CELL_SIZE
+            y = burning_node.state[1] * self.CELL_SIZE
+            layer2[y:y + self.CELL_SIZE, x:x + self.CELL_SIZE] = [0, 0, 255, 1]
 
         # display the airport 
         airport_x = self.airport.state[0] * self.CELL_SIZE
@@ -743,3 +744,11 @@ if __name__ == "__main__":
             print("action",random_action)
             obs, reward, done, info = env.step(random_action)
             print('reward',reward, 'done', done)
+
+"""
+TODOs
+
+Double check that the fire only spread to non-phos check nodes from fire start 
+
+
+"""
