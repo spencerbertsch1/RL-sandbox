@@ -15,6 +15,9 @@ if not os.path.exists(models_dir):
 if not os.path.exists(logdir):
     os.makedirs(logdir)
 
+# tensorboard comman with optional args needed to run
+# tensorboard --logdir logs --load_fast=false --reload_multifile=true --reload_multifile_inactive_secs=-1
+
 
 @click.command()
 @click.option('--env_version', default=1, help='Which one of the environments do you want to use for training?')
