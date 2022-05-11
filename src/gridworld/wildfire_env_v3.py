@@ -148,7 +148,7 @@ class WildFireEnv(gym.Env):
     in an attempt to put out the fire.
     """
 
-    BOARD_SIZE = 20
+    BOARD_SIZE = 4
     CELL_SIZE = int(1500/BOARD_SIZE)
 
     def __init__(self, TRAIN_MODE: bool, SHOW_IMAGE_BACKGROUND: bool, SHOW_BURNED_NODES: bool):
@@ -704,7 +704,7 @@ class WildFireEnv(gym.Env):
                     l2 = [node.state for node in self.burning_nodes]
                     if lists_overlap(l1, l2):
                         # plane is dropping phos chek on a forest node that borders a burning node - Good! 
-                        self.reward = self.reward + 50
+                        self.reward = self.reward + 75
                     else:
                         # plane is dropping phos chek on a forest node that DOES NOT border a burning node - Bad! 
                         self.reward = self.reward - 10
