@@ -20,8 +20,8 @@ env.reset()
 
 model = PPO('MlpPolicy', env, verbose=1, tensorboard_log=logdir)
 
-TIMESTEPS = 1000  # <-- should be at least 1000
-for i in range(250):
+TIMESTEPS = 10000  # <-- should be at least 1000
+for i in range(1000):
 	tic = time.time()
 	# train the model TIMESTEPS number of times before saving a copy of the new model to disk
 	model.learn(total_timesteps=10, reset_num_timesteps=False, tb_log_name=f"PPO")
