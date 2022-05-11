@@ -35,7 +35,7 @@ def main(env_version):
     else:
         raise Exception('Please pass an environment number represented above! (1, 2, 3, ...)')
 
-    env = WildFireEnv(TRAIN_MODE=False, SHOW_IMAGE_BACKGROUND=False, SHOW_BURNED_NODES=False)
+    env = WildFireEnv(TRAIN_MODE=True, SHOW_IMAGE_BACKGROUND=False, SHOW_BURNED_NODES=False)
     env.reset()
 
     model = PPO('MlpPolicy', env, verbose=1, tensorboard_log=logdir)
@@ -48,3 +48,8 @@ def main(env_version):
         model.save(f"{models_dir}/{TIMESTEPS*i}")
         toc = time.time()
         print(f'Model Training Iteration finished in {round(toc - tic, 3)} seconds')
+
+
+# call main to kick off the training job
+if __name__ == "__main__":
+	main()
