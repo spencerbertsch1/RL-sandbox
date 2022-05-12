@@ -283,9 +283,12 @@ class WildFireEnv(gym.Env):
         # self.BOARD_SIZE = 100
 
         # Change SPEED to make the game go faster
-        self.SPEED = 100 # <-- lower is faster
+        if self.TRAIN_MODE:
+            self.SPEED = 1 # <-- lower is faster
+        else:
+            self.SPEED = 30 # <-- lower is faster
         # Maximum speed at which the fire advances
-        self.FIRE_SPEED = 15  # <-- lower is faster
+        self.FIRE_SPEED = 50  # <-- lower is faster
         # the amount of time in actual minutes that go by before the fire advances one step (this needs to be calibrated realistically)
         self.FIRE_TIMESTEP = int(self.FIRE_SPEED*3)  # minutes
         # define max amount of Phos Chek that a plane can carry (will depend on type of aircraft)
@@ -654,7 +657,7 @@ class WildFireEnv(gym.Env):
         """
 
         # we define the reward_offset so that even if the plane is all the way in the opposite corner, the reward is still positive
-        reward_offset: float = self.BOARD_SIZE*1.5
+        reward_offset: float = math.sqrt((self.BOARD_SIZE**2) + (self.BOARD_SIZE**2))
 
         if self.done:
             final_penalty: float = self.BOARD_SIZE*self.BOARD_SIZE - self.curr_score
@@ -689,7 +692,7 @@ class WildFireEnv(gym.Env):
                     l2 = [node.state for node in self.burning_nodes]
                     if lists_overlap(l1, l2):
                         # plane is dropping phos chek on a forest node that borders a burning node - Good! 
-                        phos_chek_reward = 10 * reward_offset * (self.beta**self.total_timesteps)
+                        phos_chek_reward = 100 * reward_offset * (self.beta**self.total_timesteps)
 
                     else:
                         # plane is dropping phos chek on a forest node that DOES NOT border a burning node - Bad! 
@@ -714,10 +717,7 @@ class WildFireEnv(gym.Env):
                 fire_dist: float = float(round(fire_dist / len(self.burning_nodes), 3))
 
             # DEFINE REWARD FOR EACH STEP HERE: 
-            self.reward: float = (reward_offset - fire_dist)/5 + phos_chek_reward
-
-            if self.total_timesteps % 20 == 0:
-                print('something')
+            self.reward: float = (reward_offset - fire_dist)/3 + phos_chek_reward
 
         return self.reward
 
