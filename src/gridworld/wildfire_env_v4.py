@@ -704,11 +704,11 @@ class WildFireEnv(gym.Env):
                         self.reward = self.reward + 10
                     else:
                         # plane is dropping phos chek on a forest node that DOES NOT border a burning node - Bad! 
-                        self.reward = self.reward - 5
+                        self.reward = self.reward - 4
                 
                 else:
                     # if we dump the phos chek on burning or burned nodes, that earns a big penalty! 
-                    self.reward = self.reward - 5
+                    self.reward = self.reward - 8
 
             # NOT DROPPING PHOS CHEK
             else:
