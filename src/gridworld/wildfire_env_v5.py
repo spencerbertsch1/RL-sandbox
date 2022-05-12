@@ -171,9 +171,11 @@ class WildFireEnv(gym.Env):
 
     def step(self, action):
         """
-        TODO
+        Add docstring here
         """
         t = time.time()
+
+        self.total_timesteps += 1
         
         # Makes and displays the board_states
         self.display_dict: dict = self.display(fire_time=self.fire_time, curr_score=self.curr_score, 
@@ -307,6 +309,8 @@ class WildFireEnv(gym.Env):
         self.VERBOSE = False
         # controls the tradeoff between the short term rewards in the game and the final reward of the number of nodes saved
         self.REWARD_BALANCER = 0.5
+        # define the beta parameter used to discount the positive reward for dropping phos chek in the right place
+        self.beta = 0.99
 
         if self.SHOW_IMAGE_BACKGROUND is True: 
             background_image = cv2.imread('/Users/spencerbertsch/Desktop/dev/RL-sandbox/src/images/occidental_vet_hospital.png')
@@ -357,6 +361,7 @@ class WildFireEnv(gym.Env):
         # define other parameters for this run 
         self.c = 0
         self.fire_time = 0
+        self.total_timesteps = 0
         self.curr_score: int = self.BOARD_SIZE*self.BOARD_SIZE
         self.first_ignition = True
         self.phos_check_dump = False
@@ -684,7 +689,8 @@ class WildFireEnv(gym.Env):
                     l2 = [node.state for node in self.burning_nodes]
                     if lists_overlap(l1, l2):
                         # plane is dropping phos chek on a forest node that borders a burning node - Good! 
-                        phos_chek_reward = reward_offset
+                        phos_chek_reward = reward_offset * (self.beta**self.total_timesteps)
+
                     else:
                         # plane is dropping phos chek on a forest node that DOES NOT border a burning node - Bad! 
                         phos_chek_reward = -reward_offset/10
