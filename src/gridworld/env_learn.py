@@ -35,6 +35,8 @@ def main(env_version):
         from wildfire_env_v2 import WildFireEnv
     elif env_version == 3:
         from wildfire_env_v3 import WildFireEnv
+    elif env_version == 4:
+        from wildfire_env_v4 import WildFireEnv
     else:
         raise Exception('Please pass an environment number represented above! (1, 2, 3, ...)')
 
