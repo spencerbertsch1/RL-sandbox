@@ -148,7 +148,7 @@ class WildFireEnv(gym.Env):
     in an attempt to put out the fire.
     """
 
-    BOARD_SIZE = 4
+    BOARD_SIZE = 20
     CELL_SIZE = int(1500/BOARD_SIZE)
 
     def __init__(self, TRAIN_MODE: bool, SHOW_IMAGE_BACKGROUND: bool, SHOW_BURNED_NODES: bool):
