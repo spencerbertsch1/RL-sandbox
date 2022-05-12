@@ -56,3 +56,8 @@ def main(env_version):
 # call main to kick off the training job
 if __name__ == "__main__":
 	main()
+
+"""
+Update observation to dictionary and include remaining phos chek in plane
+
+"""
