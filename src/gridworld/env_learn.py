@@ -20,7 +20,7 @@ if not os.path.exists(logdir):
 
 
 @click.command()
-@click.option('--env_version', default=1, help='Which one of the environments do you want to use for training?')
+@click.option('--env_version', default=7, help='Which one of the environments do you want to use for training?')
 def main(env_version):
     """
     Script that trains a PPO algorithm using the environment specifies in the command line argument
@@ -41,10 +41,12 @@ def main(env_version):
         from wildfire_env_v5 import WildFireEnv
     elif env_version == 6:
         from wildfire_env_v6 import WildFireEnv
+    elif env_version == 7:
+        from wildfire_env_v7 import WildFireEnv
     else:
         raise Exception('Please pass an environment number represented above! (1, 2, 3, ...)')
 
-    env = WildFireEnv(TRAIN_MODE=True, SHOW_IMAGE_BACKGROUND=False, SHOW_BURNED_NODES=False)
+    env = WildFireEnv(TRAIN_MODE=False, SHOW_IMAGE_BACKGROUND=False, SHOW_BURNED_NODES=False)
     env.reset()
 
     model = PPO('MlpPolicy', env, verbose=1, tensorboard_log=logdir)
