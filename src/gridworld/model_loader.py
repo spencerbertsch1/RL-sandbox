@@ -17,7 +17,7 @@ def main(MODEL: str):
     models_path = f'{models_dir}/18000.zip'
 
     # FIXME - remove this hard coded path later
-    models_path = '/Users/spencerbertsch/Desktop/RL-sandbox/src/gridworld/models/1652383130/910000.zip'
+    models_path = '/Users/spencerbertsch/Desktop/RL-sandbox/src/gridworld/models/1652134979/249000.zip'
 
     # load the model 
     model = PPO.load(models_path, env=env)
