@@ -20,7 +20,7 @@ if not os.path.exists(logdir):
 
 
 @click.command()
-@click.option('--env_version', default=1, help='Which one of the environments do you want to use for training?')
+@click.option('--env_version', default=9, help='Which one of the environments do you want to use for training?')
 @click.option('--board_size', default=4, help='What is the side length of the grid you would like to use for training?')
 def main(env_version, board_size):
     """
@@ -54,7 +54,7 @@ def main(env_version, board_size):
     else:
         raise Exception('Please pass an environment number represented above! (1, 2, 3, ...)')
 
-    env = WildFireEnv(TRAIN_MODE=True, SHOW_IMAGE_BACKGROUND=False, SHOW_BURNED_NODES=False, BOARD_SIZE=board_size)
+    env = WildFireEnv(TRAIN_MODE=False, SHOW_IMAGE_BACKGROUND=False, SHOW_BURNED_NODES=False, BOARD_SIZE=board_size)
     env.reset()
 
     model = PPO('MlpPolicy', env, verbose=1, tensorboard_log=logdir)
