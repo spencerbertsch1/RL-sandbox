@@ -1,6 +1,7 @@
 import gym
 from gym import spaces
 import cv2
+import imageio
 import random
 import numpy as np
 import math
@@ -305,6 +306,12 @@ class WildFireEnv(gym.Env):
 
         # adds helpful print statements 
         self.VERBOSE = False
+        # True if we want to create a GIF of the output
+        self.CREATE_GIF = False
+        # if we do want to create the gif, let's create a list to store the image frames 
+        if self.CREATE_GIF: 
+            self.frames: list = []
+        
         # controls the tradeoff between the short term rewards in the game and the final reward of the number of nodes saved
         self.REWARD_BALANCER = 0.5
 
@@ -603,7 +610,11 @@ class WildFireEnv(gym.Env):
 
         # show the output image
         if not self.TRAIN_MODE:
-            cv2.imshow("Wildfire Environment", res)
+            if self.CREATE_GIF:                
+                cv2.imshow("Wildfire Environment", res)
+                self.frames.append(res)
+            else:
+                cv2.imshow("Wildfire Environment", res)
             key = cv2.waitKey(int(self.SPEED))
         else:
             # cv2.imshow("Wildfire Environment", res)
@@ -648,10 +659,19 @@ class WildFireEnv(gym.Env):
         Generate the reward after each step 
         """
         if self.done:
-            # get percentage of board burned
-            percent_unburned = (self.curr_score / (self.BOARD_SIZE*self.BOARD_SIZE)) * 100
-            # (reward_balancer * current_reward) + ((1 - reward_balancer) * percent_unburned_trees)
-            self.reward = float(self.REWARD_BALANCER*self.reward + (1-self.REWARD_BALANCER) * percent_unburned)
+            if self.CREATE_GIF:
+                # at this point we want to save our list of images as a gif
+                print("Saving GIF file")
+                with imageio.get_writer("trained_model_run.gif", mode="I") as writer:
+                    for idx, frame in enumerate(self.frames):
+                        # print("Adding frame to GIF file: ", idx + 1)
+                        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                        writer.append_data(rgb_frame)
+            else:
+                # get percentage of board burned
+                percent_unburned = (self.curr_score / (self.BOARD_SIZE*self.BOARD_SIZE)) * 100
+                # (reward_balancer * current_reward) + ((1 - reward_balancer) * percent_unburned_trees)
+                self.reward = float(self.REWARD_BALANCER*self.reward + (1-self.REWARD_BALANCER) * percent_unburned)
         else:
 
             # if the plane has NO Phos Chek        
@@ -744,11 +764,3 @@ if __name__ == "__main__":
             print("action",random_action)
             obs, reward, done, info = env.step(random_action)
             print('reward',reward, 'done', done)
-
-"""
-TODOs
-
-Double check that the fire only spread to non-phos check nodes from fire start 
-
-
-"""
