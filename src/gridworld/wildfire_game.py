@@ -15,11 +15,11 @@ random.seed(10)
 
 # define globals 
 # Number of cells along the width in the game
-BOARD_SIZE = 5
+BOARD_SIZE = 20
 # Size of each cell in the board game
 CELL_SIZE = int(1500/BOARD_SIZE)
 # Change SPEED to make the game go faster
-SPEED = 3
+SPEED = 10
 # Maximum speed at which the fire advances
 FIRE_SPEED = 30  # <-- inverse 
 # the amount of time in actual minutes that go by before the fire advances one step (this needs to be calibrated realistically)
