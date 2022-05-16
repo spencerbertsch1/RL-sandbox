@@ -149,10 +149,7 @@ class WildFireEnv(gym.Env):
     in an attempt to put out the fire.
     """
 
-    BOARD_SIZE = 20
-    CELL_SIZE = int(1500/BOARD_SIZE)
-
-    def __init__(self, TRAIN_MODE: bool, SHOW_IMAGE_BACKGROUND: bool, SHOW_BURNED_NODES: bool):
+    def __init__(self, TRAIN_MODE: bool, SHOW_IMAGE_BACKGROUND: bool, SHOW_BURNED_NODES: bool, BOARD_SIZE: int = 4):
         super(WildFireEnv, self).__init__()
         # Define action and observation space
         # They must be gym.spaces objects
@@ -169,6 +166,10 @@ class WildFireEnv(gym.Env):
         self.TRAIN_MODE = TRAIN_MODE
         self.SHOW_IMAGE_BACKGROUND = SHOW_IMAGE_BACKGROUND
         self.SHOW_BURNED_NODES = SHOW_BURNED_NODES
+
+        # environment parameters
+        self.BOARD_SIZE = BOARD_SIZE
+        self.CELL_SIZE = int(1500/BOARD_SIZE)
 
     def step(self, action):
         """
