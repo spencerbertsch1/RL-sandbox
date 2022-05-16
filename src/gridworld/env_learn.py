@@ -20,13 +20,15 @@ if not os.path.exists(logdir):
 
 
 @click.command()
-@click.option('--env_version', default=7, help='Which one of the environments do you want to use for training?')
-def main(env_version):
+@click.option('--env_version', default=1, help='Which one of the environments do you want to use for training?')
+@click.option('--board_size', default=4, help='What is the side length of the grid you would like to use for training?')
+def main(env_version, board_size):
     """
     Script that trains a PPO algorithm using the environment specifies in the command line argument
     """
 
-    print(f'USING ENVIRONMENT {env_version}')
+    print(f'USING ENVIRONMENT VERSION: {env_version}')
+    print(f'USING BOARD SIZE: {board_size}x{board_size}')
 
 	# load the correct env based on the arg from click 
     if env_version == 1:
@@ -45,10 +47,14 @@ def main(env_version):
         from wildfire_env_v7 import WildFireEnv
     elif env_version == 8:
         from wildfire_env_v8 import WildFireEnv
+    elif env_version == 9:
+        from wildfire_env_v9 import WildFireEnv
+    elif env_version == 10:
+        from wildfire_env_v10 import WildFireEnv
     else:
         raise Exception('Please pass an environment number represented above! (1, 2, 3, ...)')
 
-    env = WildFireEnv(TRAIN_MODE=True, SHOW_IMAGE_BACKGROUND=False, SHOW_BURNED_NODES=False)
+    env = WildFireEnv(TRAIN_MODE=True, SHOW_IMAGE_BACKGROUND=False, SHOW_BURNED_NODES=False, BOARD_SIZE=board_size)
     env.reset()
 
     model = PPO('MlpPolicy', env, verbose=1, tensorboard_log=logdir)
