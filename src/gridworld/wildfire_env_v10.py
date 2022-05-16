@@ -148,10 +148,7 @@ class WildFireEnv(gym.Env):
     in an attempt to put out the fire.
     """
 
-    BOARD_SIZE = 20
-    CELL_SIZE = int(1500/BOARD_SIZE)
-
-    def __init__(self, TRAIN_MODE: bool, SHOW_IMAGE_BACKGROUND: bool, SHOW_BURNED_NODES: bool):
+    def __init__(self, TRAIN_MODE: bool, SHOW_IMAGE_BACKGROUND: bool, SHOW_BURNED_NODES: bool, BOARD_SIZE: int = 4):
         super(WildFireEnv, self).__init__()
         # Define action and observation space
         # They must be gym.spaces objects
@@ -168,6 +165,10 @@ class WildFireEnv(gym.Env):
         self.TRAIN_MODE = TRAIN_MODE
         self.SHOW_IMAGE_BACKGROUND = SHOW_IMAGE_BACKGROUND
         self.SHOW_BURNED_NODES = SHOW_BURNED_NODES
+
+        # environment parameters
+        self.BOARD_SIZE = BOARD_SIZE
+        self.CELL_SIZE = int(1500/BOARD_SIZE)
 
     def step(self, action):
         """
@@ -680,34 +681,6 @@ class WildFireEnv(gym.Env):
             final_penalty: float = self.BOARD_SIZE*self.BOARD_SIZE - self.curr_score
             self.reward = float(self.REWARD_BALANCER*self.reward - (1-self.REWARD_BALANCER) * final_penalty)
         else:
-            # define the reward for dropping phos chek in the right place
-            phos_chek_reward = 0
-
-            if self.phos_check_dump: 
-                # get the neighboring nodes to the plane's current location
-                x: int = int(self.plane.previous_state[0])
-                y: int = int((self.plane.previous_state[1]))
-                curr_plane_node: Node = self.node_map[x][y]
-                
-                # if we want to check whether or not the up wind nodes are burning
-                if self.USE_UPWIND_NODE_FOR_REWARD: 
-
-                    # find the up wind state first 
-                    upwind_state = self.get_up_wind_state(curr_plane_node.state)
-                    x: int = int(upwind_state[0])
-                    y: int = int((upwind_state[1]))
-                    # use the up wind node 
-                    curr_plane_node: Node = self.node_map[x][y]
-
-                plane_neighbor_nodes: list = curr_plane_node.neighbors
-
-                # if any of the plane's current neighbors are burning, then we give a large reward 
-                l1 = [node.state for node in plane_neighbor_nodes]
-                l2 = [node.state for node in self.burning_nodes]
-                if lists_overlap(l1, l2):
-                    # plane is dropping phos chek on a forest node that borders a burning node - Good! 
-                    phos_chek_reward = 10 * reward_offset * (self.beta**self.total_timesteps)
-
             # get the mean distance of the plane to all the currently burning nodes 
             burning_states: list = [node.state for node in self.burning_nodes]
             fire_dist = 0
@@ -721,9 +694,20 @@ class WildFireEnv(gym.Env):
             else:
                 # normalize the fire distance over the number of burning nodes
                 fire_dist: float = float(round(fire_dist / len(self.burning_nodes), 3))
+                # as the fire grows out of control, the reward for being close to the fire becomes less and less 
+                # because it's distributed over a larger area
 
+            if self.phos_check_dump:
+                # dropping the phos chek in the middle of the board is neutral - away is bad, close to the fire is good
+                phos_chek_reward = reward_offset/2 - fire_dist
+            else:
+                phos_chek_reward = 0
+            
             # DEFINE REWARD FOR EACH STEP HERE: 
             self.reward: float = round((reward_offset - fire_dist)/3 + phos_chek_reward, 4)
+
+            if self.reward > 3: 
+                print('something')
 
         return self.reward
 
