@@ -708,9 +708,6 @@ class WildFireEnv(gym.Env):
             # DEFINE REWARD FOR EACH STEP HERE: 
             self.reward: float = round((reward_offset - fire_dist)/3 + phos_chek_reward, 4)
 
-            if self.reward > 3: 
-                print('something')
-
         return self.reward
 
 
