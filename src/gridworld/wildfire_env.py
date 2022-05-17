@@ -171,13 +171,19 @@ class WildFireEnv(gym.Env):
         self.TRAIN_MODE = TRAIN_MODE
         self.SHOW_IMAGE_BACKGROUND = SHOW_IMAGE_BACKGROUND
         self.SHOW_BURNED_NODES = SHOW_BURNED_NODES
-        
+
 
     def step(self, action):
         """
         TODO
         """
         t = time.time()
+
+        if len(self.burning_nodes) == 0:
+            # the game is over, so we set done to True
+            self.done = True
+            if self.VERBOSE:
+                self.print_results()
         
         # Makes and displays the board_states
         self.display_dict: dict = self.display(fire_time=self.fire_time, curr_score=self.curr_score, 
@@ -208,6 +214,17 @@ class WildFireEnv(gym.Env):
 
         # Moving the plane
         self.plane.move()    
+
+        """
+        NEW CONSTRAINTS - no dumping on burned, burning, or phos chek nodes! 
+        """
+        if self.phos_check_dump: 
+            # we don't need to worry that the plane is dumping with no phos chek because the plane has 1 million nodes worth
+            # TODO these loops, especially the burned nodes and phos chek nodes will take a LONG time for large grids - we need to vectorize here
+            if (self.plane.previous_state in [node.state for node in self.burning_nodes]) | \
+               (self.plane.previous_state in [node.state for node in self.burned_nodes]) | \
+               (self.plane.previous_state in [node.state for node in self.phos_chek_nodes]):  # TODO <-- this line could take a long time!! We need to vectorize here
+               self.phos_check_dump = False
 
         if self.phos_check_dump:
             if self.plane.phos_chek_level > 0:

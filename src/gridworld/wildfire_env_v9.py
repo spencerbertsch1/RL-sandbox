@@ -227,9 +227,9 @@ class WildFireEnv(gym.Env):
         if self.phos_check_dump: 
             # we don't need to worry that the plane is dumping with no phos chek because the plane has 1 million nodes worth
             # TODO these loops, especially the burned nodes and phos chek nodes will take a LONG time for large grids - we need to vectorize here
-            if (self.plane.state in [node.state for node in self.burning_nodes]) | \
-               (self.plane.state in [node.state for node in self.burned_nodes]) | \
-               (self.plane.state in [node.state for node in self.phos_chek_nodes]):  # TODO <-- this line could take a long time!! We need to vectorize here
+            if (self.plane.previous_state in [node.state for node in self.burning_nodes]) | \
+               (self.plane.previous_state in [node.state for node in self.burned_nodes]) | \
+               (self.plane.previous_state in [node.state for node in self.phos_chek_nodes]):  # TODO <-- this line could take a long time!! We need to vectorize here
                self.phos_check_dump = False
 
         if self.phos_check_dump:
@@ -333,7 +333,7 @@ class WildFireEnv(gym.Env):
         # controls the tradeoff between the short term rewards in the game and the final reward of the number of nodes saved
         self.REWARD_BALANCER = 0.5
         # define the beta parameter used to discount the positive reward for dropping phos chek in the right place
-        self.beta = 0.99
+        self.beta = 0.95
 
         if self.SHOW_IMAGE_BACKGROUND is True: 
             background_image = cv2.imread('/Users/spencerbertsch/Desktop/dev/RL-sandbox/src/images/occidental_vet_hospital.png')
