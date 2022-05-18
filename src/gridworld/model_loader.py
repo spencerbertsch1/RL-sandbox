@@ -10,14 +10,14 @@ def main(MODEL: str):
     :return: NA
     """
 
-    env = WildFireEnv(TRAIN_MODE=False, SHOW_IMAGE_BACKGROUND=False, SHOW_BURNED_NODES=False, BOARD_SIZE=4)
+    env = WildFireEnv(TRAIN_MODE=False, SHOW_IMAGE_BACKGROUND=False, SHOW_BURNED_NODES=False, BOARD_SIZE=20)
     env.reset()
 
     models_dir = f'src/sb_sandbox/models/{MODEL}'
     models_path = f'{models_dir}/18000.zip'
 
     # FIXME - remove this hard coded path later
-    models_path = '/Users/spencerbertsch/Desktop/RL-sandbox/src/gridworld/models/1652720193/210000.zip'
+    models_path = '/Users/spencerbertsch/Desktop/RL-sandbox/src/gridworld/models/1652720321/2180000.zip'
 
     # load the model 
     model = PPO.load(models_path, env=env)
