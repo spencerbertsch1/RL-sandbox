@@ -133,3 +133,7 @@ dmypy.json
 .DS_Store
 # find . -name .DS_Store -print0 | xargs -0 git rm --ignore-unmatch
 # ^^^ use this command to wipe all the .DS_Store files from git at the root level of the repo (if they've already been versioned mistakenly)
+
+# don't version the logs!
+/logs/**
+/src/gridworld/logs/**
