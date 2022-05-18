@@ -1,4 +1,4 @@
-from stable_baselines3 import PPO
+from stable_baselines3 import PPO, DQN, A2C
 import os
 import time
 from test_env import TestEnv
@@ -18,17 +18,19 @@ if not os.path.exists(logdir):
 # tensorboard comman with optional args needed to run
 # tensorboard --logdir logs --load_fast=false --reload_multifile=true --reload_multifile_inactive_secs=-1
 
-
 @click.command()
-@click.option('--env_version', default=11, help='Which one of the environments do you want to use for training?')
-@click.option('--board_size', default=20, help='What is the side length of the grid you would like to use for training?')
-def main(env_version, board_size):
+@click.option('--env_version', default=12, help='Which one of the environments do you want to use for training?')
+@click.option('--board_size', default=50, help='What is the side length of the grid you would like to use for training?')
+@click.option('--policy', default='mlp', help='What is the policy you want to use for training?')
+@click.option('--algorithm', default='DQN', help='What is the RL algorithm you want to use?')
+def main(env_version, board_size, policy, algorithm):
     """
     Script that trains a PPO algorithm using the environment specifies in the command line argument
     """
 
     print(f'USING ENVIRONMENT VERSION: {env_version}')
     print(f'USING BOARD SIZE: {board_size}x{board_size}')
+    print(f'USING POLICY: {policy}')
 
 	# load the correct env based on the arg from click 
     if env_version == 1:
@@ -53,13 +55,31 @@ def main(env_version, board_size):
         from wildfire_env_v10 import WildFireEnv
     elif env_version == 11:
         from wildfire_env_v11 import WildFireEnv
+    elif env_version == 12:
+        from wildfire_env_v12 import WildFireEnv
     else:
         raise Exception('Please pass an environment number represented above! (1, 2, 3, ...)')
 
-    env = WildFireEnv(TRAIN_MODE=True, SHOW_IMAGE_BACKGROUND=False, SHOW_BURNED_NODES=False, BOARD_SIZE=board_size)
+    env = WildFireEnv(TRAIN_MODE=False, SHOW_IMAGE_BACKGROUND=False, SHOW_BURNED_NODES=False, BOARD_SIZE=board_size)
     env.reset()
 
-    model = PPO('MlpPolicy', env, verbose=1, tensorboard_log=logdir)
+    # define the policy that will be used for training
+    if policy.lower() == 'mlp':
+        rl_policy = 'MlpPolicy'
+    elif policy.lower() == 'cnn':
+        rl_policy = 'CnnPolicy'
+    else:
+        raise Exception(f'policy should be either \'mlp\' or \'cnn\', not {policy}')
+
+    # define the RL algoeithm that will be used for training
+    if algorithm == 'PPO':
+        model = PPO(rl_policy, env, verbose=1, tensorboard_log=logdir)
+    elif algorithm == 'DQN':
+        model = DQN(rl_policy, env, verbose=1, tensorboard_log=logdir)
+    elif algorithm == 'A2C':
+        model = A2C(rl_policy, env, verbose=1, tensorboard_log=logdir)
+    else:
+        raise Exception(f'RL algorithm should be \'PPO\', \'A2C\', or \'DQN\' not {algorithm}')
 
     TIMESTEPS = 10000  # <-- should be at least 1000
     for i in range(250):
@@ -76,6 +96,7 @@ if __name__ == "__main__":
 	main()
 
 """
-Update observation to dictionary and include remaining phos chek in plane
+TODO - Things to work on down the road...
 
+1. Update observation to dictionary and include remaining phos chek in plane
 """
