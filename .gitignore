@@ -137,3 +137,6 @@ dmypy.json
 # don't version the logs!
 /logs/**
 /src/gridworld/logs/**
+
+# ignore the gifs of each run 
+trained_model_run.gif
