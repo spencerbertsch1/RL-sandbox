@@ -60,7 +60,7 @@ def main(env_version, board_size, policy, algorithm):
     else:
         raise Exception('Please pass an environment number represented above! (1, 2, 3, ...)')
 
-    env = WildFireEnv(TRAIN_MODE=False, SHOW_IMAGE_BACKGROUND=False, SHOW_BURNED_NODES=False, BOARD_SIZE=board_size)
+    env = WildFireEnv(TRAIN_MODE=True, SHOW_IMAGE_BACKGROUND=False, SHOW_BURNED_NODES=False, BOARD_SIZE=board_size)
     env.reset()
 
     # define the policy that will be used for training
