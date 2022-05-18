@@ -8,7 +8,8 @@ import math
 from math import dist
 import time
 import matplotlib.pyplot as plt
-	
+from pyrsistent import freeze
+import seaborn as sns
 random.seed(10)
 
 
@@ -173,6 +174,54 @@ class WildFireEnv(gym.Env):
         self.SHOW_BURNED_NODES = SHOW_BURNED_NODES
 
 
+    def initiate_drop(self):
+        """
+        Method that ensures the plane will drop phos chek for its maximum drop length unless it flies over 
+        any old phos chek drop, any burned nodes, or any burning nodes. If that happens, then the self.phos_check_dump
+        instance variable is set to False. 
+        """
+
+        if self.phos_check_dump: 
+            if self.plane.phos_chek_level > 0:
+                # we're already dumping phos chek so this does nothing
+                pass
+            else:
+                self.phos_check_dump = False
+
+        else:
+            # we need to start dropping phos chek for n time steps
+            self.phos_check_dump = True
+            self.plane.phos_chek_level = self.MAX_PHOS_CHEK
+
+
+    def generate_heatmap(self):
+
+        map: np.array = np.empty((self.BOARD_SIZE, self.BOARD_SIZE))
+
+        reward_offset: float = math.sqrt((self.BOARD_SIZE**2) + (self.BOARD_SIZE**2))
+
+        burning_states: list = [n.state for n in self.burning_nodes]
+
+        # iterate through each cell of the map
+        for i in range(self.BOARD_SIZE):
+            for j in range(self.BOARD_SIZE):
+
+                # get the fire distance of each cell
+                fire_dist = 0
+                for state in burning_states:
+                    curr_fire_dist: float = round(dist([i, j], state), 3)
+                    fire_dist += curr_fire_dist
+
+                # calculate the reward 
+                curr_reward = round((reward_offset - fire_dist)/3, 2)
+                map[i][j] = curr_reward
+
+        # transpose array 
+        map = np.transpose(map)
+
+        # make the heatmap and save it
+        sns.heatmap(map, annot=True, linewidths=.5)
+
     def step(self, action):
         """
         TODO
@@ -208,7 +257,7 @@ class WildFireEnv(gym.Env):
             self.plane.direction = 3
         elif action == 4:
             # activate airal "attack"
-            self.phos_check_dump = not self.phos_check_dump
+            self.initiate_drop()
         # elif key == ord("p"): 
         #     self.quit = True
 
@@ -252,6 +301,10 @@ class WildFireEnv(gym.Env):
                 # increment the clock 
                 self.fire_time = self.fire_time + self.FIRE_TIMESTEP
                 self.curr_score = (self.BOARD_SIZE*self.BOARD_SIZE) - len(self.burned_nodes)
+
+                # create the heatmap if we need to 
+                if self.CREATE_HEATMAP:
+                    self.generate_heatmap()
         else:
             self.c += 1
 
@@ -308,7 +361,7 @@ class WildFireEnv(gym.Env):
         # the amount of time in actual minutes that go by before the fire advances one step (this needs to be calibrated realistically)
         self.FIRE_TIMESTEP = int(self.FIRE_SPEED*3)  # minutes
         # define max amount of Phos Chek that a plane can carry (will depend on type of aircraft)
-        self.MAX_PHOS_CHEK = 15
+        self.MAX_PHOS_CHEK = 10
         # Wind
         self.WIND_DIRECTION = 4
         self.wind_direction_lookup = {'north': 1, 'northeast': 2, 'east': 3, 'southeast': 4, 'south': 5, 'southwest': 6, 'west': 7, 'northwest': 8}
@@ -316,18 +369,12 @@ class WildFireEnv(gym.Env):
         # set to True if the reward function should calculate distance to fire based on upwind node
         self.USE_UPWIND_NODE_FOR_REWARD = False
 
-        # THESE ARE NOW DEFINES IN THE CONSTRUCTOR!!! PASS THEM UPON INSTANTIATION OF THE WILDFIRE_ENV OBJECT
-        # # train mode - true if we want the simulations to run fast and we don't care about aesthetics
-        # self.TRAIN_MODE = True
-        # # True if you want to see the image background (take a little while to render at the start of the build)
-        # self.SHOW_IMAGE_BACKGROUND = False
-        # # Show the burned nodes 
-        # self.SHOW_BURNED_NODES = False
-
         # adds helpful print statements 
         self.VERBOSE = False
         # True if we want to create a GIF of the output
         self.CREATE_GIF = False
+        # True if you want to create a heatmap at each fire step update
+        self.CREATE_HEATMAP = True
         # if we do want to create the gif, let's create a list to store the image frames 
         if self.CREATE_GIF: 
             self.frames: list = []
