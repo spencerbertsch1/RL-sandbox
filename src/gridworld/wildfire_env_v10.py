@@ -209,7 +209,7 @@ class WildFireEnv(gym.Env):
             self.plane.direction = 3
         elif action == 4:
             # activate airal "attack"
-            self.phos_check_dump = not self.phos_check_dump
+            self.initiate_drop()
         # elif key == ord("p"): 
         #     self.quit = True
 
@@ -400,6 +400,26 @@ class WildFireEnv(gym.Env):
         # plt.show()
     
         return self.observation
+
+
+    def initiate_drop(self):
+        """
+        Method that ensures the plane will drop phos chek for its maximum drop length unless it flies over 
+        any old phos chek drop, any burned nodes, or any burning nodes. If that happens, then the self.phos_check_dump
+        instance variable is set to False. 
+        """
+
+        if self.phos_check_dump: 
+            if self.plane.phos_chek_level > 0:
+                # we're already dumping phos chek so this does nothing
+                pass
+            else:
+                self.phos_check_dump = False
+
+        else:
+            # we need to start dropping phos chek for n time steps
+            self.phos_check_dump = True
+            self.plane.phos_chek_level = self.MAX_PHOS_CHEK
 
 
     def get_neighbors(self, node: Node, node_map: list):
