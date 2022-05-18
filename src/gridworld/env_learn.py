@@ -20,8 +20,8 @@ if not os.path.exists(logdir):
 
 
 @click.command()
-@click.option('--env_version', default=9, help='Which one of the environments do you want to use for training?')
-@click.option('--board_size', default=4, help='What is the side length of the grid you would like to use for training?')
+@click.option('--env_version', default=11, help='Which one of the environments do you want to use for training?')
+@click.option('--board_size', default=20, help='What is the side length of the grid you would like to use for training?')
 def main(env_version, board_size):
     """
     Script that trains a PPO algorithm using the environment specifies in the command line argument
@@ -51,6 +51,8 @@ def main(env_version, board_size):
         from wildfire_env_v9 import WildFireEnv
     elif env_version == 10:
         from wildfire_env_v10 import WildFireEnv
+    elif env_version == 11:
+        from wildfire_env_v11 import WildFireEnv
     else:
         raise Exception('Please pass an environment number represented above! (1, 2, 3, ...)')
 
