@@ -17,7 +17,7 @@ def main(MODEL: str):
     models_path = f'{models_dir}/18000.zip'
 
     # FIXME - remove this hard coded path later
-    models_path = '/Users/spencerbertsch/Desktop/RL-sandbox/src/gridworld/models/1652720321/2180000.zip'
+    models_path = '/Users/spencerbertsch/Desktop/RL-sandbox/src/gridworld/models/1652720362/2150000.zip'
 
     # load the model 
     model = PPO.load(models_path, env=env)
@@ -33,9 +33,7 @@ def main(MODEL: str):
             action, _ = model.predict(obs)
             obs, reward, done, info = env.step(action)
 
-
     env.close()
-
 
 if __name__ == "__main__":
     
