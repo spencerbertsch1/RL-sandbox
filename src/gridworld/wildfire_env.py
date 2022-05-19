@@ -374,7 +374,7 @@ class WildFireEnv(gym.Env):
         # True if we want to create a GIF of the output
         self.CREATE_GIF = False
         # True if you want to create a heatmap at each fire step update
-        self.CREATE_HEATMAP = True
+        self.CREATE_HEATMAP = False
         # if we do want to create the gif, let's create a list to store the image frames 
         if self.CREATE_GIF: 
             self.frames: list = []
