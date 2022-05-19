@@ -1,9 +1,10 @@
 from stable_baselines3.common.env_checker import check_env
-from wildfire_env_v12 import WildFireEnv
+# from wildfire_env_v12 import WildFireEnv
+from env_test_only_move import WildFireEnv
 from test_env import TestEnv
 from portfolio_opt import PortfolioOptEnv
 
-env = WildFireEnv(TRAIN_MODE=False, SHOW_IMAGE_BACKGROUND=False, SHOW_BURNED_NODES=False, BOARD_SIZE=20)
+env = WildFireEnv(TRAIN_MODE=False, SHOW_IMAGE_BACKGROUND=False, SHOW_BURNED_NODES=False, BOARD_SIZE=50)
 episodes = 2
 
 for episode in range(episodes):
