@@ -1,6 +1,7 @@
 import gym
 from stable_baselines3 import PPO, A2C
-from wildfire_env import WildFireEnv
+# from wildfire_env import WildFireEnv
+from env_test_only_move import WildFireEnv
 import os
 import time
 
@@ -10,14 +11,14 @@ def main(MODEL: str):
     :return: NA
     """
 
-    env = WildFireEnv(TRAIN_MODE=False, SHOW_IMAGE_BACKGROUND=False, SHOW_BURNED_NODES=False, BOARD_SIZE=20)
+    env = WildFireEnv(TRAIN_MODE=False, SHOW_IMAGE_BACKGROUND=False, SHOW_BURNED_NODES=False, BOARD_SIZE=10)
     env.reset()
 
     models_dir = f'src/sb_sandbox/models/{MODEL}'
     models_path = f'{models_dir}/18000.zip'
 
     # FIXME - remove this hard coded path later
-    models_path = '/Users/spencerbertsch/Desktop/RL-sandbox/src/gridworld/models/1652720362/2150000.zip'
+    models_path = '/Users/spencerbertsch/Desktop/RL-sandbox/models/1652980425/10000.zip'
 
     # load the model 
     model = PPO.load(models_path, env=env)
