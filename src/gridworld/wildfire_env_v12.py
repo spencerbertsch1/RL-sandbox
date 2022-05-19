@@ -161,8 +161,8 @@ class WildFireEnv(gym.Env):
         self.action_space = spaces.Discrete(4)
         # Example for using image as input (channel-first; channel-last also works):
         # self.observation_shape = (100, 100, 1)  # <-- MAKE SURE THIS MATCHES THE BOARD SIZE! (For observations of the board)
-        low = np.zeros(shape=(self.BOARD_SIZE, self.BOARD_SIZE, 1), dtype=np.uint8)
-        high =  np.ones(shape=(self.BOARD_SIZE, self.BOARD_SIZE, 1), dtype=np.uint8)*255
+        low = np.zeros(shape=(1, self.BOARD_SIZE, self.BOARD_SIZE), dtype=np.uint8)
+        high =  np.ones(shape=(1, self.BOARD_SIZE, self.BOARD_SIZE), dtype=np.uint8)*255
         # self.observation_space = spaces.Box(low, high, dtype=np.int64)
         self.observation_space = spaces.Box(low=low, high=high, dtype=np.uint8)
 
@@ -642,12 +642,14 @@ class WildFireEnv(gym.Env):
             # copy the first layer into the resulting image
             res[cnd] = layer2[cnd]
 
-        # add the score to the image 
-        pix: int = int(self.CELL_SIZE * self.BOARD_SIZE)
-        cv2.rectangle(res, ((pix-300), 0), (pix, (125)), (211, 211, 211), -1)
+        # show the output image
+        if not self.TRAIN_MODE:
+            # add the score to the image 
+            pix: int = int(self.CELL_SIZE * self.BOARD_SIZE)
+            cv2.rectangle(res, ((pix-300), 0), (pix, (125)), (211, 211, 211), -1)
 
-        cv2.putText(res, text=f'Time: {fire_time} minutes', org=((pix-300), 50), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(0, 0, 0),thickness=2)
-        cv2.putText(res, text=f'Score: {curr_score}', org=((pix-300), 100), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(0, 0, 0),thickness=2)
+            cv2.putText(res, text=f'Time: {fire_time} minutes', org=((pix-300), 50), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(0, 0, 0),thickness=2)
+            cv2.putText(res, text=f'Score: {curr_score}', org=((pix-300), 100), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(0, 0, 0),thickness=2)
 
         # show the output image
         if not self.TRAIN_MODE:
@@ -668,26 +670,26 @@ class WildFireEnv(gym.Env):
         Generate the observation
         
         """
-        self.observation = np.zeros(shape=(self.BOARD_SIZE, self.BOARD_SIZE, 1), dtype=np.uint8)
+        self.observation = np.zeros(shape=(1, self.BOARD_SIZE, self.BOARD_SIZE), dtype=np.uint8)
 
         # we set the burned states in the matrix to 1
-        burned_states = [x.state for x in self.burned_nodes] 
-        for burned_state in burned_states:
-            self.observation[burned_state[0], burned_state[1]] = 1
+        # burned_states = [x.state for x in self.burned_nodes] 
+        # for burned_state in burned_states:
+        #     self.observation[burned_state[0], burned_state[1]] = 1
 
         # we set the burning states in the matrix to 1
         burning_states = [x.state for x in self.burning_nodes] 
         for burning_state in burning_states:
-            self.observation[burning_state[0], burning_state[1]] = 2
+            self.observation[0][burning_state[0], burning_state[1]] = 100
 
         # we set the phos chek states in the matrix to 1
-        phos_chek_states = [x.state for x in self.phos_chek_nodes] 
-        for phos_chek_state in phos_chek_states:
-            self.observation[phos_chek_state[0], phos_chek_state[1]] = 3
+        # phos_chek_states = [x.state for x in self.phos_chek_nodes] 
+        # for phos_chek_state in phos_chek_states:
+        #     self.observation[phos_chek_state[0], phos_chek_state[1]] = 3
         
-        self.observation[self.plane.state[0], self.plane.state[1]] = 4  
+        self.observation[0][self.plane.state[0], self.plane.state[1]] = 200
 
-        self.observation[self.airport.state[0], self.airport.state[1]] = 5
+        # self.observation[self.airport.state[0], self.airport.state[1]] = 5
 
         return self.observation
 
