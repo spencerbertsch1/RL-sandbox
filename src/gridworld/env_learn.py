@@ -20,8 +20,8 @@ if not os.path.exists(logdir):
 
 @click.command()
 @click.option('--env_version', default=12, help='Which one of the environments do you want to use for training?')
-@click.option('--board_size', default=50, help='What is the side length of the grid you would like to use for training?')
-@click.option('--policy', default='mlp', help='What is the policy you want to use for training?')
+@click.option('--board_size', default=20, help='What is the side length of the grid you would like to use for training?')
+@click.option('--policy', default='cnn', help='What is the policy you want to use for training?')
 @click.option('--algorithm', default='DQN', help='What is the RL algorithm you want to use?')
 def main(env_version, board_size, policy, algorithm):
     """
