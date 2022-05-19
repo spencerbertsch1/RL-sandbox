@@ -31,6 +31,7 @@ def main(env_version, board_size, policy, algorithm):
     print(f'USING ENVIRONMENT VERSION: {env_version}')
     print(f'USING BOARD SIZE: {board_size}x{board_size}')
     print(f'USING POLICY: {policy}')
+    print(f'USING RL ALGORITHM: {algorithm}')
 
 	# load the correct env based on the arg from click 
     if env_version == 1:
