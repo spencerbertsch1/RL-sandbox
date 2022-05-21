@@ -58,6 +58,8 @@ def main(env_version, board_size, policy, algorithm):
         from wildfire_env_v11 import WildFireEnv
     elif env_version == 12:
         from wildfire_env_v12 import WildFireEnv
+    elif env_version == 13:
+        from wildfire_env_v13 import WildFireEnv
     else:
         raise Exception('Please pass an environment number represented above! (1, 2, 3, ...)')
 
