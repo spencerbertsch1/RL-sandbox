@@ -375,6 +375,8 @@ class WildFireEnv(gym.Env):
         # if we do want to create the gif, let's create a list to store the image frames 
         if self.CREATE_GIF: 
             self.frames: list = []
+        # adds a line to the output graphs showing the plane's history
+        self.ADD_LINE = True
         
         # controls the tradeoff between the short term rewards in the game and the final reward of the number of nodes saved
         self.REWARD_BALANCER = 0.5
@@ -626,7 +628,7 @@ class WildFireEnv(gym.Env):
             for burned_node in self.burned_nodes:
                 x = burned_node.state[0] * self.CELL_SIZE
                 y = burned_node.state[1] * self.CELL_SIZE
-                layer2[y:y + self.CELL_SIZE, x:x + self.CELL_SIZE] = [173, 220, 255, 200]
+                layer2[y:y + self.CELL_SIZE, x:x + self.CELL_SIZE] = [205, 133, 63, 200]
         # TODO ^ Speed this up in the future 
 
         # create the layer 2 cache so we don't need to iterate through thousands of burned nodes for the render
@@ -636,22 +638,30 @@ class WildFireEnv(gym.Env):
         for phos_chek_node in self.phos_chek_nodes:
             x = phos_chek_node.state[0] * self.CELL_SIZE
             y = phos_chek_node.state[1] * self.CELL_SIZE
-            layer2[y:y + self.CELL_SIZE, x:x + self.CELL_SIZE] = [255, 10, 10, 1]
+            layer2[y:y + self.CELL_SIZE, x:x + self.CELL_SIZE] = [65, 105, 225, 1]
 
         for burning_node in self.burning_nodes:
             x = burning_node.state[0] * self.CELL_SIZE
             y = burning_node.state[1] * self.CELL_SIZE
-            layer2[y:y + self.CELL_SIZE, x:x + self.CELL_SIZE] = [0, 0, 255, 1]
+            layer2[y:y + self.CELL_SIZE, x:x + self.CELL_SIZE] = [255, 51, 51, 1]
 
         # display the airport 
         airport_x = self.airport.state[0] * self.CELL_SIZE
         airport_y = self.airport.state[1] * self.CELL_SIZE
-        layer2[airport_y:airport_y + self.CELL_SIZE, airport_x:airport_x + self.CELL_SIZE] = [255,255,0, 255]
+        layer2[airport_y:airport_y + self.CELL_SIZE, airport_x:airport_x + self.CELL_SIZE] = [169,169,169, 255]
 
         # Display the plane  
         x = self.plane.state[0] * self.CELL_SIZE
         y = self.plane.state[1] * self.CELL_SIZE
         layer2[y:y + self.CELL_SIZE, x:x + self.CELL_SIZE] = [255, 255, 255, 255]
+
+
+        if self.ADD_LINE:
+            start_point = (0, 0)
+            end_point = (250, 250)
+            color = (255,255,255)
+            thickness = 2
+            layer2 = cv2.line(layer2, start_point, end_point, color, thickness)
         
         if self.TRAIN_MODE: 
             res = layer2
@@ -674,6 +684,9 @@ class WildFireEnv(gym.Env):
 
         # show the output image
         if not self.TRAIN_MODE:
+            # update the RGB to make it real colors
+            res = cv2.cvtColor(res, cv2.COLOR_BGR2RGB)
+
             if self.CREATE_GIF:                
                 cv2.imshow("Wildfire Environment", res)
                 self.frames.append(res)
