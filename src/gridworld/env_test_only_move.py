@@ -31,6 +31,7 @@ class Plane:
         self.phos_chek_level = phos_chek_level      # int representing the amount of Phos Chek left in the plane
         self.direction = direction                  # the direction that the plane is flying (N, E, S, W)  
         self.BOARD_SIZE = BOARD_SIZE                # the size of the board (env) that the plane is flying over
+        self.flight_path = set()                    # set representing the history of movements of the agent
 
     def move(self):
         """
@@ -38,6 +39,26 @@ class Plane:
         """
         # update the previous state to the current state before we move the plane
         self.previous_state = self.state.copy()
+
+        # find cell sizes for path plotting
+        cell_size: int = round(1500/(self.BOARD_SIZE))
+        half_cell_size: int = round(cell_size/2)
+
+        # get the point for the previous state (x1, y1) 
+        x1 = self.previous_state[0] * cell_size + half_cell_size
+        y1 = self.previous_state[1] * cell_size + half_cell_size
+
+        # get the point for the current state (x2, y2) 
+        x2 = self.state[0] * cell_size + half_cell_size
+        y2 = self.state[1] * cell_size + half_cell_size
+
+        # add the tuple of 2 points representing a line to the flight path for later plotting
+        path: tuple = (x1, y1, x2, y2)
+        if (x1 == y1) & (y1 == x2) & (x2 == y2):
+            # the aircraft didn't move, so there's no path to add
+            pass
+        else: 
+            self.flight_path.add(path)
 
         # Checks what its current direction is and moves accordingly
         if self.direction == 0:
@@ -112,6 +133,7 @@ class Plane:
                     self.direction = 2
                     self.state[0] -= 1
 
+        return self.flight_path
 
 class Node:
     """
@@ -259,7 +281,7 @@ class WildFireEnv(gym.Env):
         #     self.quit = True
 
         # Moving the plane
-        self.plane.move()    
+        self.flight_path = self.plane.move()    
 
         """
         NEW CONSTRAINTS - no dumping on burned, burning, or phos chek nodes! 
@@ -392,7 +414,7 @@ class WildFireEnv(gym.Env):
 
         else:
             # we could make this configurable later on - for now this will only work with 1500px by 1500px images 
-            self.layer1 = np.zeros([1500, 1500, 4])
+            self.layer1 = np.full([1500, 1500, 4], 0)
 
         # list of lists representing the board of all nodes 
         self.node_map: list = self.generate_initial_nodes()
@@ -434,6 +456,7 @@ class WildFireEnv(gym.Env):
         self.first_ignition = True
         self.phos_check_dump = False
         self.step_times = []
+        self.flight_path = set()
 
         # todo we could add more dimansions to this later to add multiple values to the same cell...
         self.observation = self.make_observation()
@@ -655,13 +678,13 @@ class WildFireEnv(gym.Env):
         y = self.plane.state[1] * self.CELL_SIZE
         layer2[y:y + self.CELL_SIZE, x:x + self.CELL_SIZE] = [255, 255, 255, 255]
 
-
         if self.ADD_LINE:
-            start_point = (0, 0)
-            end_point = (250, 250)
-            color = (255,255,255)
-            thickness = 2
-            layer2 = cv2.line(layer2, start_point, end_point, color, thickness)
+            color = (0, 255, 0, 255)
+            thickness = 20
+            for path in self.flight_path:
+                start_point = (path[0], path[1])
+                end_point = (path[2], path[3])
+                layer2 = cv2.line(layer2, start_point, end_point, color, thickness)
         
         if self.TRAIN_MODE: 
             res = layer2
