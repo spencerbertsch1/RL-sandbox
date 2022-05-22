@@ -398,7 +398,7 @@ class WildFireEnv(gym.Env):
         if self.CREATE_GIF: 
             self.frames: list = []
         # adds a line to the output graphs showing the plane's history
-        self.ADD_LINE = True
+        self.ADD_HISTORY = True
         
         # controls the tradeoff between the short term rewards in the game and the final reward of the number of nodes saved
         self.REWARD_BALANCER = 0.5
@@ -678,7 +678,7 @@ class WildFireEnv(gym.Env):
         y = self.plane.state[1] * self.CELL_SIZE
         layer2[y:y + self.CELL_SIZE, x:x + self.CELL_SIZE] = [255, 255, 255, 255]
 
-        if self.ADD_LINE:
+        if self.ADD_HISTORY:
             color = (0, 255, 0, 255)
             thickness = 20
             for path in self.flight_path:
