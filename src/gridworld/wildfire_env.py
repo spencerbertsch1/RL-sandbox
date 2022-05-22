@@ -39,6 +39,26 @@ class Plane:
         # update the previous state to the current state before we move the plane
         self.previous_state = self.state.copy()
 
+        # find cell sizes for path plotting
+        cell_size: int = round(1500/(self.BOARD_SIZE))
+        half_cell_size: int = round(cell_size/2)
+
+        # get the point for the previous state (x1, y1) 
+        x1 = self.previous_state[0] * cell_size + half_cell_size
+        y1 = self.previous_state[1] * cell_size + half_cell_size
+
+        # get the point for the current state (x2, y2) 
+        x2 = self.state[0] * cell_size + half_cell_size
+        y2 = self.state[1] * cell_size + half_cell_size
+
+        # add the tuple of 2 points representing a line to the flight path for later plotting
+        path: tuple = (x1, y1, x2, y2)
+        if (x1 == y1) & (y1 == x2) & (x2 == y2):
+            # the aircraft didn't move, so there's no path to add
+            pass
+        else: 
+            self.flight_path.add(path)
+
         # Checks what its current direction is and moves accordingly
         if self.direction == 0:
             # move east
@@ -659,12 +679,13 @@ class WildFireEnv(gym.Env):
         y = self.plane.state[1] * self.CELL_SIZE
         layer2[y:y + self.CELL_SIZE, x:x + self.CELL_SIZE] = [255, 255, 255, 255]
 
-        if self.ADD_LINE:
-            start_point = (0, 0)
-            end_point = (250, 250)
-            color = (255,255,255)
-            thickness = 2
-            image = cv2.line(layer2, start_point, end_point, color, thickness)
+        if self.ADD_HISTORY:
+            color = (0, 255, 0, 255)
+            thickness = 20
+            for path in self.flight_path:
+                start_point = (path[0], path[1])
+                end_point = (path[2], path[3])
+                layer2 = cv2.line(layer2, start_point, end_point, color, thickness)
         
         if self.TRAIN_MODE: 
             res = layer2
