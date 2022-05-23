@@ -1,7 +1,9 @@
 import gym
 from stable_baselines3 import PPO, A2C
-# from wildfire_env import WildFireEnv
-from env_test_only_move import WildFireEnv
+from wildfire_env import WildFireEnv
+from wildfire_env_v13 import WildFireEnv
+# from wildfire_env_v12 import WildFireEnv
+# from env_test_only_move import WildFireEnv
 import os
 import time
 import pickle
@@ -26,11 +28,12 @@ def main(MODEL: str, SAVE_REWARDS: bool, RUN_NAME: str, SHOW_REWARDS: True, HEUR
 
     if SAVE_REWARDS: 
 
-        env = WildFireEnv(TRAIN_MODE=True, SHOW_IMAGE_BACKGROUND=False, SHOW_BURNED_NODES=False, BOARD_SIZE=10)
+        env = WildFireEnv(TRAIN_MODE=False, SHOW_IMAGE_BACKGROUND=False, SHOW_BURNED_NODES=False, BOARD_SIZE=10)
         env.reset()
 
-        # FIXME - remove this hard coded path later
-        models_path = '/Users/spencerbertsch/Desktop/code/RL-sandbox/src/gridworld/models/1652982511/1760000.zip'
+        # Add path to the model that we want to load
+        models_path = '/Users/spencerbertsch/Desktop/code/RL-sandbox/src/gridworld/models/1653147804/1000000.zip'
+        # models_path = '/Users/spencerbertsch/Desktop/code/RL-sandbox/src/gridworld/models/1652982511/1760000.zip'
 
         # load the model 
         model = PPO.load(models_path, env=env)
@@ -44,8 +47,8 @@ def main(MODEL: str, SAVE_REWARDS: bool, RUN_NAME: str, SHOW_REWARDS: True, HEUR
             episode_reward = 0
             print(f'Performance Testing {RUN_NAME}_{MODEL} - Episode {ep+1}/{episodes}.')
 
+            ep_length = 0
             while not done: 
-
                 # random run 
                 if (RUN_NAME == 'random') | (MODEL == 'random'):
                     action = env.action_space.sample()
@@ -70,8 +73,11 @@ def main(MODEL: str, SAVE_REWARDS: bool, RUN_NAME: str, SHOW_REWARDS: True, HEUR
                     action, _ = model.predict(obs)
                     obs, reward, done, info = env.step(action)
                     episode_reward += reward
+                    ep_length += 1
 
             all_rewards.append(episode_reward)
+            print(f'Steps taken during episode: {ep_length}, Total Episode Reward: {episode_reward} \n')
+            ep_length = 0
 
         env.close()
 
@@ -111,13 +117,13 @@ def main(MODEL: str, SAVE_REWARDS: bool, RUN_NAME: str, SHOW_REWARDS: True, HEUR
 if __name__ == "__main__":
     
     # define the RL model that we will use 
-    MODEL: str = "with_noise"
+    MODEL: str = "PPO"
     # Load a trained model and displays ten episodes
-    SAVE_REWARDS = False
+    SAVE_REWARDS = True
     # Display a chart of the rewards for different models 
-    PLOT_REWARDS = True
+    PLOT_REWARDS = False
     # name for the current run
-    RUN_NAME = 'heuristic'
+    RUN_NAME = 'rotary_wing'
     # Define heuristic noise
     HEURISTIC_NOISE = True
     main(MODEL=MODEL, SAVE_REWARDS=SAVE_REWARDS, RUN_NAME=RUN_NAME, SHOW_REWARDS=PLOT_REWARDS, 
