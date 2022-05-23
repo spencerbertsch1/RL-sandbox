@@ -7,8 +7,9 @@ import time
 import pickle
 
 from routines import boxplot_dict
+from heuristics import true_optimal_ex1, heuristic_ex1
 
-def main(MODEL: str, SAVE_REWARDS: bool, RUN_NAME: str, SHOW_REWARDS: True):
+def main(MODEL: str, SAVE_REWARDS: bool, RUN_NAME: str, SHOW_REWARDS: True, HEURISTIC_NOISE: False):
     """
     Loads a trained model and displays five episodes
     :return: NA
@@ -44,14 +45,31 @@ def main(MODEL: str, SAVE_REWARDS: bool, RUN_NAME: str, SHOW_REWARDS: True):
             print(f'Performance Testing {RUN_NAME}_{MODEL} - Episode {ep+1}/{episodes}.')
 
             while not done: 
-                # env.render()  # <-- we don't use a render() method, so we don't need this! (we use TRAIN_MODE instance variable instead)
+
+                # random run 
                 if (RUN_NAME == 'random') | (MODEL == 'random'):
                     action = env.action_space.sample()
+                    obs, reward, done, info = env.step(action)
+                    episode_reward += reward
+
+                # true optimal run - teleportation allowed (constraint relaxation)
+                if (RUN_NAME == 'relaxation') | (MODEL == 'relaxation'):
+                    action = env.action_space.sample()
+                    obs, reward, done, info = env.step(action)
+                    reward = true_optimal_ex1(obs=obs)
+                    episode_reward += reward
+
+                # heuristic run - with or without noise
+                elif (RUN_NAME == 'heuristic') | (MODEL == 'heuristic'):
+                    action = heuristic_ex1(obs=obs, noise=HEURISTIC_NOISE)
+                    obs, reward, done, info = env.step(action)
+                    episode_reward += reward
+                
+                # traditional run with a trained model 
                 else:
                     action, _ = model.predict(obs)
-                
-                obs, reward, done, info = env.step(action)
-                episode_reward += reward
+                    obs, reward, done, info = env.step(action)
+                    episode_reward += reward
 
             all_rewards.append(episode_reward)
 
@@ -89,14 +107,18 @@ def main(MODEL: str, SAVE_REWARDS: bool, RUN_NAME: str, SHOW_REWARDS: True):
                      save_results=True, show_results=True, sort_keys=False, 
                      path_to_figs=figure_dir)
 
+
 if __name__ == "__main__":
     
     # define the RL model that we will use 
-    MODEL: str = "random"
+    MODEL: str = "with_noise"
     # Load a trained model and displays ten episodes
     SAVE_REWARDS = False
     # Display a chart of the rewards for different models 
-    SHOW_REWARDS = True
+    PLOT_REWARDS = True
     # name for the current run
-    RUN_NAME = 'random'
-    main(MODEL=MODEL, SAVE_REWARDS=SAVE_REWARDS, RUN_NAME=RUN_NAME, SHOW_REWARDS=SHOW_REWARDS)
+    RUN_NAME = 'heuristic'
+    # Define heuristic noise
+    HEURISTIC_NOISE = True
+    main(MODEL=MODEL, SAVE_REWARDS=SAVE_REWARDS, RUN_NAME=RUN_NAME, SHOW_REWARDS=PLOT_REWARDS, 
+         HEURISTIC_NOISE=HEURISTIC_NOISE)
