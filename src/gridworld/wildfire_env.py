@@ -31,6 +31,7 @@ class Plane:
         self.phos_chek_level = phos_chek_level      # int representing the amount of Phos Chek left in the plane
         self.direction = direction                  # the direction that the plane is flying (N, E, S, W)  
         self.BOARD_SIZE = BOARD_SIZE                # the size of the board (env) that the plane is flying over
+        self.flight_path = set()                    # set representing the history of movements of the agent
 
     def move(self):
         """
@@ -131,6 +132,12 @@ class Plane:
                     # move west instead
                     self.direction = 2
                     self.state[0] -= 1
+
+        elif self.direction == -1:
+            # here we model a rotary wing aircraft that can hover
+            pass
+
+        return self.flight_path
 
 
 class Node:
@@ -276,13 +283,15 @@ class WildFireEnv(gym.Env):
         elif action == 3:
             self.plane.direction = 3
         elif action == 4:
-            # activate airal "attack"
-            self.initiate_drop()
+            self.plane.direction = -1
+        # elif action == 4:
+        #     # activate airal "attack"
+        #     self.initiate_drop()
         # elif key == ord("p"): 
         #     self.quit = True
 
         # Moving the plane
-        self.plane.move()    
+        self.flight_path = self.plane.move()     
 
         """
         NEW CONSTRAINTS - no dumping on burned, burning, or phos chek nodes! 
@@ -399,8 +408,8 @@ class WildFireEnv(gym.Env):
         if self.CREATE_GIF: 
             self.frames: list = []
 
-        # adds a line to the resulting graphics showing where the plane has traveled
-        self.ADD_LINE = True
+        # adds a line to the resulting graphics showing where the plane has traveled (breadcrumb trail)
+        self.ADD_HISTORY = True
         
         # controls the tradeoff between the short term rewards in the game and the final reward of the number of nodes saved
         self.REWARD_BALANCER = 0.5
@@ -458,6 +467,7 @@ class WildFireEnv(gym.Env):
         self.first_ignition = True
         self.phos_check_dump = False
         self.step_times = []
+        self.flight_path = set()
 
         # todo we could add more dimansions to this later to add multiple values to the same cell...
         self.observation = self.make_observation()
