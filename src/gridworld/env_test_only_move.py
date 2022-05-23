@@ -376,7 +376,7 @@ class WildFireEnv(gym.Env):
         # Change SPEED to make the game go faster
         self.SPEED = 25 # <-- lower is faster
         # Maximum speed at which the fire advances
-        self.FIRE_SPEED = 15  # <-- lower is faster
+        self.FIRE_SPEED = 5  # <-- lower is faster
         # the amount of time in actual minutes that go by before the fire advances one step (this needs to be calibrated realistically)
         self.FIRE_TIMESTEP = int(self.FIRE_SPEED*3)  # minutes
         # define max amount of Phos Chek that a plane can carry (will depend on type of aircraft)
