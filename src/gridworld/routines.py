@@ -67,7 +67,7 @@ if __name__ == "__main__":
 
     figure_dir = '/'
 
-#     Mean: 0.5101359009742736
+# Mean: 0.5101359009742736
 # std: 0.011494420189369551
 
     rewards_dict: dict = {
