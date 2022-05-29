@@ -123,7 +123,7 @@ if __name__ == "__main__":
     # Display a chart of the rewards for different models 
     PLOT_REWARDS = False
     # name for the current run
-    RUN_NAME = 'rotary_wing'
+    RUN_NAME = 'RL'
     # Define heuristic noise
     HEURISTIC_NOISE = True
     main(MODEL=MODEL, SAVE_REWARDS=SAVE_REWARDS, RUN_NAME=RUN_NAME, SHOW_REWARDS=PLOT_REWARDS, 
