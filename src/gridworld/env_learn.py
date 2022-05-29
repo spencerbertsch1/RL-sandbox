@@ -19,10 +19,10 @@ if not os.path.exists(logdir):
 # tensorboard --logdir logs --load_fast=false --reload_multifile=true --reload_multifile_inactive_secs=-1
 
 @click.command()
-@click.option('--env_version', default=12, help='Which one of the environments do you want to use for training?')
-@click.option('--board_size', default=20, help='What is the side length of the grid you would like to use for training?')
-@click.option('--policy', default='cnn', help='What is the policy you want to use for training?')
-@click.option('--algorithm', default='DQN', help='What is the RL algorithm you want to use?')
+@click.option('--env_version', default=14, help='Which one of the environments do you want to use for training?')
+@click.option('--board_size', default=10, help='What is the side length of the grid you would like to use for training?')
+@click.option('--policy', default='mlp', help='What is the policy you want to use for training?')
+@click.option('--algorithm', default='PPO', help='What is the RL algorithm you want to use?')
 def main(env_version, board_size, policy, algorithm):
     """
     Script that trains a PPO algorithm using the environment specifies in the command line argument
@@ -60,6 +60,8 @@ def main(env_version, board_size, policy, algorithm):
         from wildfire_env_v12 import WildFireEnv
     elif env_version == 13:
         from wildfire_env_v13 import WildFireEnv
+    elif env_version == 14:
+        from wildfire_env_v14 import WildFireEnv
     else:
         raise Exception('Please pass an environment number represented above! (1, 2, 3, ...)')
 
