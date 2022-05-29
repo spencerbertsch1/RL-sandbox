@@ -1,7 +1,7 @@
 import gym
 from stable_baselines3 import PPO, A2C
 from wildfire_env import WildFireEnv
-from wildfire_env_v13 import WildFireEnv
+from wildfire_env_v14 import WildFireEnv
 # from env_test_only_move import WildFireEnv
 import os
 import time
@@ -19,7 +19,7 @@ def main(MODEL: str):
     models_path = f'{models_dir}/18000.zip'
 
     # FIXME - remove this hard coded path later
-    models_path = '/Users/spencerbertsch/Desktop/code/RL-sandbox/src/gridworld/models/1653147804/1000000.zip'
+    models_path = '/Users/spencerbertsch/Desktop/code/models/1653845373/50000.zip'
 
     # load the model 
     model = PPO.load(models_path, env=env)
