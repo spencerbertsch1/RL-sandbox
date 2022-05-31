@@ -1,6 +1,7 @@
 import gym
 from gym import spaces
 import cv2
+import imageio
 import random
 import numpy as np
 import math
@@ -29,6 +30,7 @@ class Plane:
         self.phos_chek_level = phos_chek_level      # int representing the amount of Phos Chek left in the plane
         self.direction = direction                  # the direction that the plane is flying (N, E, S, W)  
         self.BOARD_SIZE = BOARD_SIZE                # the size of the board (env) that the plane is flying over
+        self.flight_path = set()                    # set representing the history of movements of the agent
 
     def move(self):
         """
@@ -109,6 +111,33 @@ class Plane:
                     # move west instead
                     self.direction = 2
                     self.state[0] -= 1
+
+        elif self.direction == -1:
+            # here we model a rotary wing aircraft that can hover
+            pass
+
+        # find cell sizes for path plotting
+        cell_size: int = round(1500/(self.BOARD_SIZE))
+        half_cell_size: int = round(cell_size/2)
+
+        # get the point for the previous state (x1, y1) 
+        x1 = self.previous_state[0] * cell_size + half_cell_size
+        y1 = self.previous_state[1] * cell_size + half_cell_size
+
+        # get the point for the current state (x2, y2) 
+        x2 = self.state[0] * cell_size + half_cell_size
+        y2 = self.state[1] * cell_size + half_cell_size
+
+        # add the tuple of 2 points representing a line to the flight path for later plotting
+        path: tuple = (x1, y1, x2, y2)
+        if (x1 == y1) & (y1 == x2) & (x2 == y2):
+            # the aircraft didn't move, so there's no path to add
+            pass
+        else: 
+            self.flight_path.add(path)
+
+        return self.flight_path
+
 
 
 class Node:
@@ -214,7 +243,7 @@ class WildFireEnv(gym.Env):
         #     self.quit = True
 
         # Moving the plane
-        self.plane.move()    
+        self.flight_path = self.plane.move()    
 
         if self.plane.state == self.airport.state: 
             # plane is stopping at the airport
@@ -330,8 +359,16 @@ class WildFireEnv(gym.Env):
 
         # adds helpful print statements 
         self.VERBOSE = False
+        # True if we want to create a GIF of the output
+        self.CREATE_GIF = True
+        # True if you want to create a heatmap at each fire step update
+        self.CREATE_HEATMAP = False
+        # if we do want to create the gif, let's create a list to store the image frames 
+        if self.CREATE_GIF: 
+            self.frames: list = []
         # controls the tradeoff between the short term rewards in the game and the final reward of the number of nodes saved
         self.REWARD_BALANCER = 0.5
+        self.ADD_HISTORY = True
         # define the beta parameter used to discount the positive reward for dropping phos chek in the right place
         self.beta = 0.95
 
@@ -394,6 +431,7 @@ class WildFireEnv(gym.Env):
         self.observation = self.make_observation()
 
         self.reward = 0
+        self.flight_path = set()
 
         # to visualize the observation
         # plt.imshow(self.observation, cmap='hot', interpolation='nearest')
@@ -613,22 +651,30 @@ class WildFireEnv(gym.Env):
         for phos_chek_node in self.phos_chek_nodes:
             x = phos_chek_node.state[0] * self.CELL_SIZE
             y = phos_chek_node.state[1] * self.CELL_SIZE
-            layer2[y:y + self.CELL_SIZE, x:x + self.CELL_SIZE] = [255, 10, 10, 1]
+            layer2[y:y + self.CELL_SIZE, x:x + self.CELL_SIZE] = [65, 105, 225, 1]
 
         for burning_node in self.burning_nodes:
             x = burning_node.state[0] * self.CELL_SIZE
             y = burning_node.state[1] * self.CELL_SIZE
-            layer2[y:y + self.CELL_SIZE, x:x + self.CELL_SIZE] = [0, 0, 255, 1]
+            layer2[y:y + self.CELL_SIZE, x:x + self.CELL_SIZE] = [255, 51, 51, 1]
 
         # display the airport 
         airport_x = self.airport.state[0] * self.CELL_SIZE
         airport_y = self.airport.state[1] * self.CELL_SIZE
-        layer2[airport_y:airport_y + self.CELL_SIZE, airport_x:airport_x + self.CELL_SIZE] = [255,255,0, 255]
+        layer2[airport_y:airport_y + self.CELL_SIZE, airport_x:airport_x + self.CELL_SIZE] = [169,169,169, 255]
 
         # Display the plane  
         x = self.plane.state[0] * self.CELL_SIZE
         y = self.plane.state[1] * self.CELL_SIZE
         layer2[y:y + self.CELL_SIZE, x:x + self.CELL_SIZE] = [255, 255, 255, 255]
+
+        if self.ADD_HISTORY:
+            color = (0, 255, 0, 255)
+            thickness = 10
+            for path in self.flight_path:
+                start_point = (path[0], path[1])
+                end_point = (path[2], path[3])
+                layer2 = cv2.line(layer2, start_point, end_point, color, thickness)
         
         if self.TRAIN_MODE: 
             res = layer2
@@ -651,9 +697,16 @@ class WildFireEnv(gym.Env):
             cv2.putText(res, text=f'Time: {fire_time} minutes', org=((pix-300), 50), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(0, 0, 0),thickness=2)
             cv2.putText(res, text=f'Score: {curr_score}', org=((pix-300), 100), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(0, 0, 0),thickness=2)
 
+
         # show the output image
         if not self.TRAIN_MODE:
-            cv2.imshow("Wildfire Environment", res)
+            # update the RGB to make it real colors
+            res = cv2.cvtColor(res, cv2.COLOR_BGR2RGB)
+            if self.CREATE_GIF:                
+                cv2.imshow("Wildfire Environment", res)
+                self.frames.append(res)
+            else:
+                cv2.imshow("Wildfire Environment", res)
             key = cv2.waitKey(int(self.SPEED))
         else:
             # cv2.imshow("Wildfire Environment", res)
@@ -697,6 +750,16 @@ class WildFireEnv(gym.Env):
         """
         Generate the reward after each step 
         """
+
+        if self.done:
+            if self.CREATE_GIF:
+                # at this point we want to save our list of images as a gif
+                print("Saving GIF file")
+                with imageio.get_writer("trained_model_run.gif", mode="I") as writer:
+                    for idx, frame in enumerate(self.frames):
+                        # print("Adding frame to GIF file: ", idx + 1)
+                        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                        writer.append_data(rgb_frame)
 
         # we define the reward_offset so that even if the plane is all the way in the opposite corner, the reward is still positive
         reward_offset: float = math.sqrt((self.BOARD_SIZE**2) + (self.BOARD_SIZE**2))
