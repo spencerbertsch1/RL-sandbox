@@ -1,3 +1,9 @@
+
+"""
+This script can be run from the command line using a command like this: 
+$ python3 env_learn.py --env_version=14 --board_size=10 --policy=mlp --algorithm=PPO
+"""
+
 from stable_baselines3 import PPO, DQN, A2C
 import os
 import time
