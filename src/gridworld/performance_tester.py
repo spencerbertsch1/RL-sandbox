@@ -1,8 +1,8 @@
 import gym
 from stable_baselines3 import PPO, A2C
 from wildfire_env import WildFireEnv
-from wildfire_env_v13 import WildFireEnv
-# from wildfire_env_v12 import WildFireEnv
+# from wildfire_env_v13 import WildFireEnv
+from wildfire_env_v12 import WildFireEnv
 # from env_test_only_move import WildFireEnv
 import os
 import time
@@ -32,8 +32,8 @@ def main(MODEL: str, SAVE_REWARDS: bool, RUN_NAME: str, SHOW_REWARDS: True, HEUR
         env.reset()
 
         # Add path to the model that we want to load
-        models_path = '/Users/spencerbertsch/Desktop/code/RL-sandbox/src/gridworld/models/1653147804/1000000.zip'
-        # models_path = '/Users/spencerbertsch/Desktop/code/RL-sandbox/src/gridworld/models/1652982511/1760000.zip'
+        # models_path = '/Users/spencerbertsch/Desktop/code/RL-sandbox/src/gridworld/models/1653147804/1000000.zip'
+        models_path = '/Users/spencerbertsch/Desktop/code/RL-sandbox/src/gridworld/models/1652982511/1760000.zip'
 
         # load the model 
         model = PPO.load(models_path, env=env)
@@ -117,13 +117,13 @@ def main(MODEL: str, SAVE_REWARDS: bool, RUN_NAME: str, SHOW_REWARDS: True, HEUR
 if __name__ == "__main__":
     
     # define the RL model that we will use 
-    MODEL: str = "PPO"
+    MODEL: str = "heuristic"
     # Load a trained model and displays ten episodes
-    SAVE_REWARDS = True
+    SAVE_REWARDS = False
     # Display a chart of the rewards for different models 
-    PLOT_REWARDS = False
+    PLOT_REWARDS = True
     # name for the current run
-    RUN_NAME = 'RL'
+    RUN_NAME = 'heuristic'
     # Define heuristic noise
     HEURISTIC_NOISE = True
     main(MODEL=MODEL, SAVE_REWARDS=SAVE_REWARDS, RUN_NAME=RUN_NAME, SHOW_REWARDS=PLOT_REWARDS, 
