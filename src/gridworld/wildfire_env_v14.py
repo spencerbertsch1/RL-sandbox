@@ -1,6 +1,7 @@
 import gym
 from gym import spaces
 import cv2
+import imageio
 import random
 import numpy as np
 import math
@@ -360,6 +361,13 @@ class WildFireEnv(gym.Env):
 
         # adds helpful print statements 
         self.VERBOSE = False
+        # True if we want to create a GIF of the output
+        self.CREATE_GIF = False
+        # True if you want to create a heatmap at each fire step update
+        self.CREATE_HEATMAP = False
+        # if we do want to create the gif, let's create a list to store the image frames 
+        if self.CREATE_GIF: 
+            self.frames: list = []
         # controls the tradeoff between the short term rewards in the game and the final reward of the number of nodes saved
         self.REWARD_BALANCER = 0.5
         # adds a line to the resulting graphics showing where the plane has traveled (breadcrumb trail)
@@ -646,17 +654,17 @@ class WildFireEnv(gym.Env):
         for phos_chek_node in self.phos_chek_nodes:
             x = phos_chek_node.state[0] * self.CELL_SIZE
             y = phos_chek_node.state[1] * self.CELL_SIZE
-            layer2[y:y + self.CELL_SIZE, x:x + self.CELL_SIZE] = [255, 10, 10, 1]
+            layer2[y:y + self.CELL_SIZE, x:x + self.CELL_SIZE] = [65, 105, 225, 1]
 
         for burning_node in self.burning_nodes:
             x = burning_node.state[0] * self.CELL_SIZE
             y = burning_node.state[1] * self.CELL_SIZE
-            layer2[y:y + self.CELL_SIZE, x:x + self.CELL_SIZE] = [0, 0, 255, 1]
+            layer2[y:y + self.CELL_SIZE, x:x + self.CELL_SIZE] = [255, 51, 51, 1]
 
         # display the airport 
         airport_x = self.airport.state[0] * self.CELL_SIZE
         airport_y = self.airport.state[1] * self.CELL_SIZE
-        layer2[airport_y:airport_y + self.CELL_SIZE, airport_x:airport_x + self.CELL_SIZE] = [255,255,0, 255]
+        layer2[airport_y:airport_y + self.CELL_SIZE, airport_x:airport_x + self.CELL_SIZE] = [169,169,169, 255]
 
         # Display the plane  
         x = self.plane.state[0] * self.CELL_SIZE
@@ -694,7 +702,13 @@ class WildFireEnv(gym.Env):
 
         # show the output image
         if not self.TRAIN_MODE:
-            cv2.imshow("Wildfire Environment", res)
+            # update the RGB to make it real colors
+            res = cv2.cvtColor(res, cv2.COLOR_BGR2RGB)
+            if self.CREATE_GIF:                
+                cv2.imshow("Wildfire Environment", res)
+                self.frames.append(res)
+            else:
+                cv2.imshow("Wildfire Environment", res)
             key = cv2.waitKey(int(self.SPEED))
         else:
             # cv2.imshow("Wildfire Environment", res)
@@ -738,6 +752,16 @@ class WildFireEnv(gym.Env):
         """
         Generate the reward after each step 
         """
+
+        if self.done:
+            if self.CREATE_GIF:
+                # at this point we want to save our list of images as a gif
+                print("Saving GIF file")
+                with imageio.get_writer("trained_model_run.gif", mode="I") as writer:
+                    for idx, frame in enumerate(self.frames):
+                        # print("Adding frame to GIF file: ", idx + 1)
+                        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                        writer.append_data(rgb_frame)
 
         # we define the reward_offset so that even if the plane is all the way in the opposite corner, the reward is still positive
         reward_offset: float = math.sqrt((self.BOARD_SIZE**2) + (self.BOARD_SIZE**2))
@@ -786,3 +810,9 @@ if __name__ == "__main__":
             print("action",random_action)
             obs, reward, done, info = env.step(random_action)
             print('reward',reward, 'done', done)
+
+"""
+https://ai.stackexchange.com/questions/22285/why-does-shifting-all-the-rewards-have-a-different-impact-on-the-performance-of
+
+Add negative rewards to make the agent end the episode sooner!
+"""
