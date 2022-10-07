@@ -1,5 +1,5 @@
 from stable_baselines3.common.env_checker import check_env
-from wildfire_env_v13 import WildFireEnv
+from wildfire_env_v14 import WildFireEnv
 # from env_test_only_move import WildFireEnv
 from test_env import TestEnv
 from portfolio_opt import PortfolioOptEnv
